@@ -40,6 +40,64 @@
   const TIMELINE_BIN_MAGIC = new Uint8Array([0x57, 0x53, 0x4c, 0x42, 0x49, 0x4e, 0x31, 0x00]);
   const appEl = document.body;
 
+  /* Protocol simulation.
+
+     Generates RX locally so the parser, the live results and the charts can be
+     exercised without a device attached. The bytes go through queueRxBytes() -
+     the same entry point the serial reader uses - so line splitting, parsing,
+     recording and chart painting all behave exactly as they do for real
+     traffic. Nothing here re-implements any of that.
+
+     Scripts are fixed rather than user-editable for now. Two are provided:
+     one for the text grammar, one for a binary schema. Both emit a header line
+     naming the rule the user should paste, so the demo is self-explanatory. */
+  const SIMULATION_SCRIPTS = {
+    'text-sensor': {
+      label: '文本：传感器读数',
+      // Matches the documented rule "/name0=/float0,/name1=/int0". The
+      // trailing \n matters: frames are split on CR/LF, so without it every tick
+      // would concatenate into one ever-growing display event instead of one
+      // line per reading. Real devices terminate their frames too.
+      build: (tick) => {
+        const temp = 21 + Math.sin(tick / 9) * 3.5;
+        const hum = 48 + Math.cos(tick / 7) * 6;
+        return encodeText(`temp=${temp.toFixed(1)},humid=${Math.round(hum)};\n`, 'utf-8');
+      }
+    },
+    'text-json': {
+      label: '文本：JSON 负载',
+      // With an empty rule box the parser tries JSON, so this script
+      // demonstrates that fallback rather than a text rule.
+      build: (tick) => {
+        const temp = 21 + Math.sin(tick / 9) * 3.5;
+        return encodeText(
+          JSON.stringify({ device: 'sim-01', uptime: tick, temp: Number(temp.toFixed(2)) }) + '\n',
+          'utf-8'
+        );
+      }
+    },
+    'binary-frame': {
+      label: '二进制：A5 帧',
+      // Matches the default seeded schema: header A5 / two data bytes /
+      // SUM8 checksum / footer 5A. Float16 is avoided deliberately: a software
+      // decoder plus a hand-built encoder is a lot of surface for a demo.
+      build: (tick) => {
+        const temp = 21 + Math.sin(tick / 9) * 3.5;
+        const hum = 48 + Math.cos(tick / 7) * 6;
+        const body = [
+          0xa5,
+          Math.round(Math.max(0, Math.min(255, temp * 10))),
+          Math.round(Math.max(0, Math.min(255, hum)))
+        ];
+        const checksum = body.slice(1).reduce((sum, b) => (sum + b) & 0xff, 0);
+        return Uint8Array.from(body.concat([checksum, 0x5a]));
+      }
+    }
+  };
+  const SIMULATION_SCRIPT_IDS = Object.keys(SIMULATION_SCRIPTS);
+  const SIMULATION_TICK_MS = 700;
+  const SIMULATION_MAX_TICKS = 10000;
+
   /* Keyboard shortcuts.
 
      One table drives both the dispatcher and the shortcut sheet, so the
@@ -211,6 +269,8 @@
     applyRecommendedRuleBtn: document.getElementById('apply-recommended-rule-btn'),
     toggleParserResultsBtn: document.getElementById('toggle-parser-results-btn'),
     parserPreview: document.getElementById('parser-preview'),
+    simulationEnabled: document.getElementById('simulation-enabled'),
+    simulationScript: document.getElementById('simulation-script'),
     addTimeChartBtn: document.getElementById('add-time-chart-btn'),
     addFftChartBtn: document.getElementById('add-fft-chart-btn'),
     addBarChartBtn: document.getElementById('add-bar-chart-btn'),
@@ -350,6 +410,12 @@
       signalRts: false,
       signalBreak: false,
       autoReconnect: true,
+      simulation: {
+        enabled: false,
+        scriptId: 'text-sensor',
+        timerId: 0,
+        tick: 0
+      },
       rxDisplayMode: 'text',
       textEncoding: 'utf-8',
       appendTimestamp: true,

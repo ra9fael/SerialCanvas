@@ -2839,6 +2839,25 @@ body.layout-expanded .charts-panel {
   min-width: 0;
 }
 
+/* Simulation switch and script picker. Sits between the title and the expand
+   button; the head is space-between with wrap, so it drops to its own line
+   rather than squeezing the title when the panel is narrow. */
+.simulation-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.simulation-controls .term-field {
+  flex: 0 0 auto;
+}
+
+#simulation-script {
+  max-width: 168px;
+}
+
 .parser-results-toggle {
   min-height: 32px;
   padding: 7px 12px;

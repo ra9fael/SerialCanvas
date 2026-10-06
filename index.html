@@ -337,6 +337,16 @@
           <section class="parser-results-card">
             <div class="parser-results-head">
               <div class="panel-title parser-results-title">实时解析结果 <span class="panel-title-note">可录制时间线导出解析结果</span></div>
+              <div class="simulation-controls">
+                <label class="term-field term-toggle" title="本地生成协议数据走同一 RX 通道，无需连接设备即可验证解析与图表">
+                  <input id="simulation-enabled" type="checkbox">
+                  <span>模拟数据</span>
+                </label>
+                <label class="term-field" title="选择模拟的协议脚本">
+                  <span>脚本</span>
+                  <select id="simulation-script"></select>
+                </label>
+              </div>
               <button id="toggle-parser-results-btn" class="secondary-btn parser-results-toggle" type="button" aria-expanded="false">展开</button>
             </div>
             <div id="parser-preview" class="parser-result-grid"></div>
