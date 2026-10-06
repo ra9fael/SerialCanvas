@@ -1566,6 +1566,12 @@
     document.documentElement.setAttribute('data-corner', value);
     appEl.setAttribute('data-corner', value);
     if (refs.cornerGroup) {
+      // Both halves of the pattern, same as applyTheme(): the pos-* class moves
+      // the sliding indicator, is-active marks the label. Setting only
+      // is-active leaves the indicator parked at the first stop.
+      refs.cornerGroup.classList.remove('pos-light', 'pos-dark');
+      if (value === 'soft') refs.cornerGroup.classList.add('pos-light');
+      else if (value === 'round') refs.cornerGroup.classList.add('pos-dark');
       refs.cornerOpts.forEach(function(opt) {
         opt.classList.toggle('is-active', opt.dataset.corner === value);
       });
