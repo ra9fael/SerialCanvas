@@ -10,7 +10,7 @@ them (layout) is explicitly blocked by another (parameter ownership).
 
 ---
 
-## Group A — regressions from this branch, fix first
+## Group A — regressions from this branch (DONE, `6d9a61a`)
 
 ### A1. Manual send/receive text is unreadable (issue 1)
 
@@ -217,14 +217,53 @@ a `.txt` (with optional timestamp prefix) or `.cast` (asciicast, which picotty
 plays back inline). `.txt` first — it is one Blob and a download link; `.cast`
 needs a writer for timing metadata that does not exist in this codebase.
 
-**Buffers.** Expose both as selects, persisted next to `terminalFontSize`:
-scrollback `1000 / 5000 / 20000 / 50000`, live buffer `4K / 8K / 32K / 128K`
-characters. Changing scrollback calls `term.options.scrollback = n`;
-changing the live limit needs `trimLiveEvents()` to read the setting instead of
-the constant.
+**Buffers — sized from measurement, not guesswork.**
 
-Note the live buffer is a *character* budget, not a line count, because lines
-vary in width. Keep that model; just make the number a preference.
+`renderMonitor()` (`app.main.js:1798`) rebuilds the entire log with
+`refs.terminal.innerHTML = parts.join('')` (`app.main.js:1863`), so the DOM node
+count and the rebuild cost both scale with the buffer. `scheduleRefresh()`
+already coalesces to one `requestAnimationFrame`, which caps the *rate* but not
+the *cost* of each rebuild.
+
+Measured with `audit/measure-buffer.mjs` — median of five rebuilds, realistic
+62-character RX lines:
+
+| Buffer (chars) | Lines | DOM nodes | `innerHTML` rebuild | Verdict |
+| --- | --- | --- | --- | --- |
+| 8 192 (today) | 132 | 528 | 0.2 ms | generous headroom |
+| 131 072 | 2 114 | 8 456 | 3.1 ms | fine |
+| 262 144 | 4 228 | 16 912 | 7.0 ms | fine |
+| 524 288 | 8 456 | 33 824 | 13.3 ms | at the frame budget |
+| 1 048 576 | 16 913 | 67 652 | 26.6 ms | drops frames |
+
+One frame at 60 Hz is 16.7 ms, and a rebuild has to fit inside it.
+
+**So "as large as possible without stuttering" resolves to a specific number:
+512 K characters is the ceiling, and 256 K is the largest value that still
+leaves real headroom.** The current 8 K is far more conservative than the
+rendering cost requires — it can go up by a factor of 32.
+
+Options, all persisted next to `terminalFontSize`:
+
+- **Live log buffer** — `64K / 256K / 512K` characters. **Default moves from
+  8 K to 256 K.** The 512 K option carries a note that it approaches the frame
+  budget, so the cost is stated rather than discovered.
+- **xterm scrollback** — `5 000 / 20 000 / 100 000` lines. xterm's own buffer is
+  far cheaper than the DOM log (text nodes only, no re-render on scrollback
+  change), so it can be larger. Default moves from 5 000 to 20 000.
+
+`trimLiveEvents()` (`app.core.js:582`) must read the setting instead of
+`MAX_LIVE_EVENT_TOTAL_CHARS`, and the value is applied on the next append.
+
+Keep the character-budget model rather than switching to a line count: line
+widths vary by an order of magnitude, so a line budget would behave very
+differently between a binary dump and short text replies.
+
+**If a much larger buffer is wanted later**, the fix is incremental DOM
+appending instead of `innerHTML` rebuild — `renderMonitor()` already knows the
+append-only case, since RX only ever adds to the end. That change would move
+the ceiling by roughly an order of magnitude. It is a real refactor though, and
+it is not needed to reach 512 K.
 
 ### C3. Protocol simulation (issue 8)
 
@@ -275,28 +314,39 @@ duplicates an existing feature or does not apply to a single-port tool.
 
 ## Order of work
 
-1. **A1** terminal text — one-line-per-site CSS fix, restores readability.
-2. **A2** corner indicator — one missing class swap.
+**Group A is done** — `6d9a61a`.
+
+1. ~~**A1** terminal text~~ — **done**, `6d9a61a`. Manual 15.58 / 7.97.
+2. ~~**A2** corner indicator~~ — **done**, `6d9a61a`. Indicator at 0 / 72.6 / 145.3 px.
 3. **B1** parameter ownership — the largest structural change, and it unblocks B3.
 4. **B2** size scale + presets.
-5. **C3** simulation — highest value, build after the panels settle.
+5. **C3** simulation — fixed built-in scripts, highest value.
 6. **C1** shortcut bar + paste debounce.
 7. **C2** export + buffer settings.
 8. **Issue 7 tooltip** singleton.
-9. **B3** layout redesign, once 3–4 have landed.
+9. **B3** layout redesign — **after** the parameters have moved, as agreed.
 
-Group A is two small commits and should land first: both are regressions on
-this branch, and shipping the branch with unreadable manual mode is not an
-option.
+## Decisions taken
 
-## Open decisions
+| Question | Decision |
+| --- | --- |
+| Buffer sizing | **As large as measurement allows.** Live buffer default 8 K → **256 K**, ceiling 512 K (frame budget). xterm scrollback 5 000 → **20 000**, up to 100 000. Numbers derived from `audit/measure-buffer.mjs`, not guessed. |
+| Size presets | **Keep both.** A preset `<select>` plus a trailing "自定义" option that reveals the existing number input, so free entry is not lost. |
+| `newline-mode` | **Two controls.** One for manual mode (`#newline-mode`, unchanged id), one for the tty/terminal (`#term-newline`). They are read by different code paths already — `normalizeSendOptions()` vs `getTermLineEnding()` — so splitting is clean. |
+| Simulation | **Fixed built-in scripts.** No user-editable protocol field in this pass. |
+| Layout | **After B1.** Designing now means designing twice. |
 
-1. **Size presets** — replace the number input outright, or keep custom values
-   behind a "自定义" option? Recommended: keep both.
-2. **`newline-mode`** — one shared control or two separate ones? Recommended:
-   two, because a getty and a serial device want different endings.
-3. **Simulation** — should scripted protocols be user-editable (a small JSON/YAML
-   field) or fixed built-ins? Recommended: fixed built-ins first; an editor is a
-   separate feature.
-4. **Layout** — is a sketch wanted before B1 lands, or after? Recommended:
-   after, so it is designed once against the real structure.
+### Note on B1 and the two newline controls
+
+Splitting is easier than it looks, because the two consumers are already
+separate: `normalizeSendOptions()` (`app.core.js:967`) reads `state.settings.newlineMode`
+for manual TX, while `getTermLineEnding()` (`app.terminal.js:232`) reads the DOM
+element directly for the terminal. So:
+
+- Manual keeps `#newline-mode` and its existing state key.
+- Terminal gets a new `#term-newline` bound to a new `state.ui.termNewline`,
+  persisted in `layout` next to `terminalSkin`, defaulting to `rn`.
+
+That also fixes a latent oddity: today both surfaces read one element, so
+changing the setting for manual mode silently changed the terminal's line ending
+too.
