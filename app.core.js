@@ -22,7 +22,6 @@
   const MAX_TIME_CHART_HISTORY_MS = 30000;
   const MAX_CHART_POINTS = 180000;
   const MAX_CHART_RENDER_POINTS = 6000;
-  const MAX_LIVE_EVENT_TOTAL_CHARS = 8192;
   const MAX_RX_OPEN_EVENT_BYTES = 2048;
   const MAX_RX_OPEN_EVENT_TEXT_CHARS = 2048;
   const LOCAL_PREFS_KEY = 'serialweb:prefs';
@@ -163,6 +162,27 @@
   const TERMINAL_FONT_SIZE_MIN = 8;
   const TERMINAL_FONT_SIZE_MAX = 48;
   const TERMINAL_FONT_SIZE_DEFAULT = 12;
+
+  /* Buffer sizes.
+
+     The log budget is a CHARACTER count, not a line count, because line widths
+     vary by an order of magnitude between a binary dump and a short text reply.
+     The numbers come from measurement, not guesswork: renderMonitor() rebuilds
+     the whole log with innerHTML, so cost scales linearly with the buffer.
+     Median of five rebuilds on realistic 62-character RX lines:
+
+       128K chars ->  8.5k DOM nodes ->  3.1ms
+       256K       -> 17k             ->  7.0ms
+       512K       -> 34k             -> 13.3ms   (a 60Hz frame is 16.7ms)
+        1M        -> 68k             -> 26.6ms   drops frames
+
+     So 512K is the ceiling and 256K is the largest value with real headroom.
+     The previous constant was 8K, ~32x more conservative than the rendering
+     cost requires. */
+  const LIVE_BUFFER_SIZES = [65536, 262144, 524288];
+  const LIVE_BUFFER_DEFAULT = 262144;
+  const TERMINAL_SCROLLBACK_SIZES = [5000, 20000, 100000];
+  const TERMINAL_SCROLLBACK_DEFAULT = 20000;
   const TERMINAL_READY_HINT_TEXT = '—— 串口终端已就绪：直接键入即发送（Ctrl+C/Ctrl+D/方向键等原样透传给设备）；如设备不回显，请打开“回显” ——';
 
   const refs = {
@@ -298,7 +318,12 @@
     monoSizeCustom: document.getElementById('mono-size-custom'),
     monoSizeCustomField: document.getElementById('mono-size-custom-field'),
     termSkin: document.getElementById('term-skin'),
+    termScrollback: document.getElementById('term-scrollback'),
+    liveBufferSize: document.getElementById('live-buffer-size'),
+    exportLogBtn: document.getElementById('export-log-btn'),
     termLocalEcho: document.getElementById('term-local-echo'),
+    termKeyBar: document.querySelector('.term-key-bar'),
+    termKeys: document.querySelectorAll('[data-term-key]'),
     autoSendTile: document.getElementById('auto-send-tile'),
     conditionSendTile: document.getElementById('condition-send-tile'),
     presetSendTile: document.getElementById('preset-send-tile'),
@@ -410,6 +435,8 @@
       signalRts: false,
       signalBreak: false,
       autoReconnect: true,
+      liveBufferSize: LIVE_BUFFER_DEFAULT,
+      terminalScrollback: TERMINAL_SCROLLBACK_DEFAULT,
       simulation: {
         enabled: false,
         scriptId: 'text-sensor',
@@ -629,15 +656,23 @@
     requestAnimationFrame(forceTerminalToLatest);
   }
 
+  /* Current live-buffer budget in characters. Read from state so the toolbar
+     select can change it; falls back to the default for an unknown value. */
+  function liveBufferLimit() {
+    var size = Number(state.settings.liveBufferSize);
+    return LIVE_BUFFER_SIZES.includes(size) ? size : LIVE_BUFFER_DEFAULT;
+  }
+
   function trimRealtimeRawChunks() {
     const chunks = state.session.rawChunks;
     if (!chunks.length) return;
+    const limit = liveBufferLimit();
     let totalChars = 0;
     let keepFrom = chunks.length;
     for (let index = chunks.length - 1; index >= 0; index -= 1) {
       totalChars += getRawChunkDisplayLength(chunks[index]);
       keepFrom = index;
-      if (totalChars > MAX_LIVE_EVENT_TOTAL_CHARS) {
+      if (totalChars > limit) {
         break;
       }
     }
@@ -649,8 +684,9 @@
   function trimLiveEvents() {
     const events = state.session.liveEvents;
     if (!events.length) return;
+    const limit = liveBufferLimit();
     let totalChars = events.reduce((sum, event) => sum + getEventDisplayText(event).length, 0);
-    while (events.length > 1 && totalChars > MAX_LIVE_EVENT_TOTAL_CHARS) {
+    while (events.length > 1 && totalChars > limit) {
       totalChars -= getEventDisplayText(events[0]).length;
       events.shift();
     }

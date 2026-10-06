@@ -177,6 +177,11 @@
     if (refs.simulationScript) refs.simulationScript.value = sim.scriptId;
   }
 
+  function syncBufferUi() {
+    if (refs.termScrollback) refs.termScrollback.value = String(getTerminalScrollback());
+    if (refs.liveBufferSize) refs.liveBufferSize.value = String(liveBufferLimit());
+  }
+
   function populateSimulationScripts() {
     const host = refs.simulationScript;
     if (!host) return;
@@ -1914,7 +1919,7 @@
     for (let index = entries.length - 1; index >= 0; index -= 1) {
       const entry = entries[index];
       const nextTotal = totalChars + entry.charLength;
-      if (visibleEntries.length && nextTotal > MAX_LIVE_EVENT_TOTAL_CHARS) {
+      if (visibleEntries.length && nextTotal > liveBufferLimit()) {
         break;
       }
       visibleEntries.unshift(entry);
@@ -5488,6 +5493,60 @@
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
+  /* Export the live log as plain text.
+
+     Uses the same event source the monitor renders from, so the file matches
+     what is on screen. In terminal view xterm owns the buffer, so its text is
+     read back through the buffer API instead - the DOM log has nothing there.
+
+     Plain text rather than .cast here: a cast file needs per-frame timing that
+     this codebase does not record. */
+  function exportLiveLog() {
+    const stamp = nowPreciseMs();
+    const nameStamp = formatReadableTimestamp(stamp).replace(/[^\d-]/g, '');
+    if (isTerminalViewActive()) {
+      const term = terminalRuntime.term;
+      const buffer = term?.buffer?.active;
+      if (!buffer) {
+        toast('无法导出', t('终端尚未初始化。'), 'warn');
+        return;
+      }
+      const lines = [];
+      for (let y = 0; y < buffer.length; y += 1) {
+        const line = buffer.getLine(y);
+        if (!line) continue;
+        const text = line.translateToString(true);
+        if (text.length) lines.push(text);
+      }
+      if (!lines.length) {
+        toast('无法导出', t('终端当前没有内容。'), 'warn');
+        return;
+      }
+      downloadFile(
+        `SerialWeb-terminal-${nameStamp}.txt`,
+        new Blob([lines.join('\n') + '\n'], { type: 'text/plain;charset=utf-8' })
+      );
+      toast('导出完成', t('终端内容已导出为文本。'), 'success');
+      return;
+    }
+    const events = getActiveEvents() || [];
+    if (!events.length) {
+      toast('无法导出', t('当前没有日志内容。'), 'warn');
+      return;
+    }
+    const showStamp = state.settings.appendTimestamp && !state.layoutExpanded;
+    const lines = events.map((event) => {
+      const direction = event.direction === 'rx' ? 'RX' : event.direction === 'tx' ? 'TX' : event.direction.toUpperCase();
+      const prefix = showStamp ? `[${formatStamp(event.timestamp)}] ${direction}` : direction;
+      return `${prefix} ${getEventDisplayText(event)}`;
+    });
+    downloadFile(
+      `SerialWeb-log-${nameStamp}.txt`,
+      new Blob([lines.join('\n') + '\n'], { type: 'text/plain;charset=utf-8' })
+    );
+    toast('导出完成', t('已导出 {{count}} 行日志。', { count: lines.length }), 'success');
+  }
+
   function getIndexDownloadUrl() {
     if (window.location.protocol === 'file:') return '';
     const current = new URL(window.location.href);
@@ -6127,6 +6186,13 @@
       sendMode: source.sendMode === 'hex' ? 'hex' : 'ascii',
       newlineMode: ['r', 'n', 'rn'].includes(source.newlineMode) ? source.newlineMode : state.settings.newlineMode,
       appendNewline: typeof source.appendNewline === 'boolean' ? source.appendNewline : state.settings.appendNewline,
+      // Whitelist rebuild: unlisted keys are dropped silently.
+      liveBufferSize: LIVE_BUFFER_SIZES.includes(Number(source.liveBufferSize))
+        ? Number(source.liveBufferSize)
+        : state.settings.liveBufferSize,
+      terminalScrollback: TERMINAL_SCROLLBACK_SIZES.includes(Number(source.terminalScrollback))
+        ? Number(source.terminalScrollback)
+        : state.settings.terminalScrollback,
       // This function rebuilds the object field by field, so a new key has to be
       // listed here explicitly or the preference is silently dropped on reload.
       // timerId / tick are runtime-only and always reset.
@@ -6265,6 +6331,7 @@
     if (refs.newlineMode) refs.newlineMode.value = state.settings.newlineMode;
     if (refs.appendNewline) refs.appendNewline.checked = state.settings.appendNewline;
     syncSimulationUi();
+    syncBufferUi();
     if (refs.autoSendInterval) refs.autoSendInterval.value = String(state.autoSend.intervalMs);
     syncSendInputModeUI();
     syncParserInputs();
@@ -7613,6 +7680,9 @@
     refs.termNewline?.addEventListener('change', () => {
       scheduleLocalPrefsSave();
     });
+    refs.termKeys?.forEach((button) => {
+      button.addEventListener('click', () => sendTerminalKey(button.dataset.termKey));
+    });
     refs.monoSizePreset?.addEventListener('change', () => {
       const value = refs.monoSizePreset.value;
       const isCustom = value === 'custom';
@@ -7994,6 +8064,21 @@
       }
       clearRealtimeHistoryData();
     });
+    refs.exportLogBtn?.addEventListener('click', exportLiveLog);
+    refs.termScrollback?.addEventListener('change', () => {
+      setTerminalScrollback(refs.termScrollback.value);
+      scheduleLocalPrefsSave();
+    });
+    refs.liveBufferSize?.addEventListener('change', () => {
+      const size = Number(refs.liveBufferSize.value);
+      if (!LIVE_BUFFER_SIZES.includes(size)) return;
+      state.settings.liveBufferSize = size;
+      // Apply immediately rather than waiting for the next append.
+      trimLiveEvents();
+      trimRealtimeRawChunks();
+      scheduleRefresh({ monitor: true, derived: true, charts: true });
+      scheduleLocalPrefsSave();
+    });
     refs.terminalJumpBtn.addEventListener('click', () => {
       forceTerminalToLatest();
     });
@@ -8185,6 +8270,7 @@
     refs.newlineMode.value = state.settings.newlineMode;
     refs.appendNewline.checked = state.settings.appendNewline;
     syncSimulationUi();
+    syncBufferUi();
     // Populate the script list before syncing it, otherwise a restored
     // preference has no matching option and the select shows nothing.
     populateSimulationScripts();

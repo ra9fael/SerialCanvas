@@ -9,6 +9,13 @@
     return state.ui.monitorView === 'terminal';
   }
 
+  /* Printable-run buffer for the paste debounce. Runtime-only, never persisted
+     and never part of terminalSession (that is the local-echo line, which is a
+     different thing). */
+  const TERMINAL_KEY_FLUSH_MS = 40;
+  let terminalKeyBuffer = '';
+  let terminalKeyFlushTimer = 0;
+
   const TERMINAL_SKINS = {
     green: {
       background: '#0b0f0b',
@@ -97,6 +104,21 @@
 
   function getTerminalFontSize() {
     return clampTerminalFontSize(refs.monoSizeCustom?.value);
+  }
+
+  /* xterm scrollback, settable from the toolbar. Cheap compared with the DOM
+     log: only text nodes are retained and changing it does not re-render. */
+  function getTerminalScrollback() {
+    var size = Number(state.settings.terminalScrollback);
+    return TERMINAL_SCROLLBACK_SIZES.includes(size) ? size : TERMINAL_SCROLLBACK_DEFAULT;
+  }
+
+  function setTerminalScrollback(value) {
+    var size = Number(value);
+    if (!TERMINAL_SCROLLBACK_SIZES.includes(size)) return;
+    state.settings.terminalScrollback = size;
+    const term = terminalRuntime.term;
+    if (term) term.options.scrollback = size;
   }
 
   function terminalHostVisible() {
@@ -210,14 +232,14 @@
       lineHeight: 1.25,
       cursorBlink: true,
       cursorStyle: 'block',
-      scrollback: 5000,
+      scrollback: getTerminalScrollback(),
       convertEol: false,
       theme: getTerminalTheme()
     });
     const fitAddon = new FitAddon.FitAddon();
     term.loadAddon(fitAddon);
     term.open(host);
-    term.onData(handleTermData);
+    term.onData(queueTerminalKeyChunk);
     host.addEventListener('wheel', handleTerminalWheel, { passive: false });
     try {
       fitAddon.fit();
@@ -313,6 +335,79 @@
     }
     terminalSession.buffer += data;
     termEchoText(String(data).replace(/\r\n|\r|\n/g, '\r\n'));
+  }
+
+  /* Byte sequences for the toolbar buttons.
+
+     These are the exact sequences xterm reports through onData for the same
+     keys, so a button and a keypress take the identical path through
+     handleTermData(). Nothing here re-implements the echo/passthrough split or
+     the line editor. */
+  const TERM_KEY_SEQUENCES = {
+    up: '\x1b[A',
+    down: '\x1b[B',
+    right: '\x1b[C',
+    left: '\x1b[D',
+    home: '\x1b[H',
+    end: '\x1b[F',
+    delete: '\x1b[3~',
+    backspace: '\x7f',
+    'ctrl-u': '\x15',
+    'ctrl-w': '\x17',
+    'ctrl-k': '\x0b',
+    'ctrl-c': '\x03',
+    'ctrl-d': '\x04',
+    'ctrl-z': '\x1a',
+    tab: '\t',
+    escape: '\x1b'
+  };
+
+  /* Buttons must work without the terminal holding focus, so this dispatches
+     through handleTermData() rather than relying on xterm's onData. */
+  function sendTerminalKey(key) {
+    const sequence = TERM_KEY_SEQUENCES[key];
+    if (!sequence) return;
+    flushTerminalKeyBuffer();
+    handleTermData(sequence);
+    scheduleLocalPrefsSave();
+  }
+
+  /* ---- Paste debounce ---------------------------------------------------
+     xterm's onData fires once per keystroke, so a 500-character paste becomes
+     500 serial writes. Printable runs accumulate and flush after 40ms, so a
+     burst becomes a handful of frames instead. Control characters and escape
+     sequences bypass the buffer so they stay immediate, and the buffer is
+     flushed before any of them so ordering is preserved. */
+  function flushTerminalKeyBuffer() {
+    if (!terminalKeyFlushTimer) return;
+    clearTimeout(terminalKeyFlushTimer);
+    terminalKeyFlushTimer = 0;
+    const buffered = terminalKeyBuffer;
+    terminalKeyBuffer = '';
+    if (buffered) sendTerminalBytes(buffered);
+  }
+
+  function queueTerminalKeyChunk(data) {
+    if (!data || typeof data !== 'string') return;
+    // Local echo is a line editor: every keystroke must reach handleTermData so
+    // terminalSession.buffer and the echo stay in step. Debouncing there would
+    // break backspace, history and the draft. So the buffer only applies to
+    // passthrough mode, which is the one that writes straight to the wire.
+    if (refs.termLocalEcho?.checked) {
+      flushTerminalKeyBuffer();
+      handleTermData(data);
+      return;
+    }
+    // Anything that is not plain printable text goes straight out, so control
+    // bytes and escape sequences keep their immediate, ordered behaviour.
+    if (data.length !== 1 || data.charCodeAt(0) < 32 || data.charCodeAt(0) === 127) {
+      flushTerminalKeyBuffer();
+      handleTermData(data);
+      return;
+    }
+    terminalKeyBuffer += data;
+    if (terminalKeyFlushTimer) return;
+    terminalKeyFlushTimer = window.setTimeout(flushTerminalKeyBuffer, TERMINAL_KEY_FLUSH_MS);
   }
 
   function sendTerminalBytes(data) {
