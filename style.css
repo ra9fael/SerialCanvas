@@ -68,6 +68,12 @@
   --grid-gap: 10px;
   --header-height: 52px;
   --compact-float-top: 92px;
+  /* Left rail width. Fluid so the serial monitor keeps the extra pixels on an
+     ultrawide window instead of the config column claiming a fixed 286px.
+     min 248px stays readable for the baud/preset grids; max 320px stops it from
+     dominating a wide screen. Drives .workspace, .left-column and the collapsed
+     state alike, so the three can never drift apart again. */
+  --rail-w: clamp(248px, 19vw, 320px);
   --panel-glow: none;
   --timeline-fill: var(--signal);
   --brand-green: rgba(34, 197, 94, 0.14);
@@ -1953,14 +1959,16 @@ body.theme-dark .timeline-export-btn.analysis.active {
   min-height: 0;
   height: 100%;
   display: grid;
-  grid-template-columns: 286px minmax(320px, 1fr);
+  /* Fluid left rail: the reference dashboard uses the same idea, so the console
+     is never squeezed on an ultrawide window. Overridden to 0 when collapsed. */
+  grid-template-columns: var(--rail-w) minmax(320px, 1fr);
   gap: 8px;
   align-items: stretch;
   transition: grid-template-columns 0.24s ease, gap 0.24s ease;
 }
 
 body.layout-expanded .workspace {
-  grid-template-columns: 286px minmax(0, 1fr);
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
 }
 
 .left-column,
@@ -1982,9 +1990,9 @@ body.layout-expanded .workspace {
 }
 
 body:not(.compact-single) .left-column {
-  width: 286px;
-  min-width: 286px;
-  max-width: 286px;
+  width: var(--rail-w);
+  min-width: var(--rail-w);
+  max-width: var(--rail-w);
   justify-self: start;
 }
 
@@ -5320,6 +5328,9 @@ body.sidebar-collapsed:not(.compact-single) .workspace {
   height: auto;
   grid-template-columns: 0 minmax(0, 1fr);
   gap: 0;
+  /* --rail-w is fluid, so the collapsed width has to override the token
+     rather than rely on a hard-coded 0. */
+  --rail-w: 0px;
 }
 
 body.sidebar-collapsed:not(.compact-single) .left-column {
