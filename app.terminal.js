@@ -96,7 +96,7 @@
   }
 
   function getTerminalFontSize() {
-    return clampTerminalFontSize(refs.termFontSize?.value);
+    return clampTerminalFontSize(refs.monoSizeCustom?.value);
   }
 
   function terminalHostVisible() {
@@ -138,11 +138,31 @@
   }
 
   function updateTerminalFont() {
+    applyMonoSize();
     applyTerminalMetrics();
   }
 
+  /* One size control feeds three surfaces: xterm, the manual log and the parse
+     preview. The two CSS tokens stay separate on purpose (see style.css) but
+     both follow this value. */
+  function applyMonoSize() {
+    const size = getTerminalFontSize();
+    document.documentElement.style.setProperty('--mono-size', size + 'px');
+    document.documentElement.style.setProperty('--log-size', size + 'px');
+  }
+
   function setTerminalFontSize(value) {
-    if (refs.termFontSize) refs.termFontSize.value = String(clampTerminalFontSize(value));
+    const size = clampTerminalFontSize(value);
+    if (refs.monoSizeCustom) refs.monoSizeCustom.value = String(size);
+    // A non-preset size has to leave the preset list on "custom", otherwise the
+    // select would show the nearest preset and the two controls would disagree.
+    if (refs.monoSizePreset) {
+      const isPreset = Array.from(refs.monoSizePreset.options)
+        .some((option) => option.value === String(size));
+      refs.monoSizePreset.value = isPreset ? String(size) : 'custom';
+      refs.monoSizeCustomField?.classList.toggle('hidden', isPreset);
+    }
+    applyMonoSize();
     applyTerminalMetrics();
   }
 

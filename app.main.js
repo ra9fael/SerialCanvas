@@ -6068,7 +6068,10 @@
         }
       }
       const savedFontSize = clampTerminalFontSize(snapshot.layout?.terminalFontSize);
-      if (refs.termFontSize) refs.termFontSize.value = String(savedFontSize);
+      // Route through setTerminalFontSize so the preset select and the CSS
+      // tokens agree with the restored value; writing the input alone would
+      // leave the preset showing its own default.
+      setTerminalFontSize(savedFontSize);
       if (refs.termSkin && typeof snapshot.layout?.terminalSkin === 'string') {
         const skinValue = snapshot.layout.terminalSkin;
         if (!skinValue || Array.from(refs.termSkin.options).some((option) => option.value === skinValue)) {
@@ -6314,6 +6317,8 @@
         expanded: Boolean(state.layoutExpanded),
         monitorView: state.ui.monitorView === 'terminal' ? 'terminal' : 'manual',
         terminalFont: refs.termFont?.value || '',
+        // Key name kept from when this drove only the terminal. It now sets
+        // every monospace surface; renaming it would discard saved preferences.
         terminalFontSize: getTerminalFontSize(),
         terminalSkin: refs.termSkin?.value || '',
         terminalNewline: refs.termNewline?.value || 'n',
@@ -7492,8 +7497,19 @@
     refs.termNewline?.addEventListener('change', () => {
       scheduleLocalPrefsSave();
     });
-    refs.termFontSize?.addEventListener('change', () => {
-      const raw = refs.termFontSize.value;
+    refs.monoSizePreset?.addEventListener('change', () => {
+      const value = refs.monoSizePreset.value;
+      const isCustom = value === 'custom';
+      refs.monoSizeCustomField?.classList.toggle('hidden', !isCustom);
+      if (isCustom) {
+        refs.monoSizeCustom?.focus();
+        return;
+      }
+      setTerminalFontSize(value);
+      scheduleLocalPrefsSave();
+    });
+    refs.monoSizeCustom?.addEventListener('change', () => {
+      const raw = refs.monoSizeCustom.value;
       setTerminalFontSize(raw === '' ? TERMINAL_FONT_SIZE_DEFAULT : raw);
       scheduleLocalPrefsSave();
     });

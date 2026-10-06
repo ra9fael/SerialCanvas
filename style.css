@@ -88,6 +88,17 @@
   --font-ui: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
 
+  /* Monospace size scale.
+
+     One control drives every monospace surface, but --mono-size and --log-size
+     stay separate tokens on purpose: enlarging the terminal is for reading a
+     device session, while the parsed-results panel is a different surface with
+     a different amount of text. A user who wants a 20px terminal generally does
+     not want the parse table at 20px too. Both default to 12px, which is what
+     these surfaces used before the scale existed. */
+  --mono-size: 12px;
+  --log-size: 12px;
+
   /* Typographic treatment borrowed from the reference: heavy, tight headings. */
   --heading-weight: 800;
   --heading-tracking: -0.015em;
@@ -3216,12 +3227,15 @@ body.theme-dark .parser-result-card {
 
 .parser-result-card span {
   display: block;
-  height: 20px;
+  /* Tracks --log-size like the other monospace surfaces, but +3px: this is a
+     large value meant to be read at a glance, not log text. The height and
+     line-height follow so the card does not clip at larger sizes. */
+  height: calc(var(--log-size, 12px) + 8px);
   font-family: var(--font-mono);
-  font-size: 15px;
+  font-size: calc(var(--log-size, 12px) + 3px);
   font-weight: 700;
   color: var(--text);
-  line-height: 20px;
+  line-height: calc(var(--log-size, 12px) + 8px);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: clip;
@@ -3411,29 +3425,9 @@ body.theme-dark .danger-btn:focus-visible {
   white-space: nowrap;
 }
 
-.insight-pre,
 .terminal-line .payload,
 .log-line .payload {
   font-family: var(--font-mono);
-}
-
-.insight-pre {
-  min-height: 0;
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  background: var(--bg-terminal);
-  color: var(--terminal-text);
-  overflow: auto;
-  font-size: var(--log-size, 12px);
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-word;
-  border: 1px solid var(--border);
-}
-
-body.layout-expanded:not(.compact-single) .insight-pre {
-  overflow: visible;
 }
 
 .charts-panel {

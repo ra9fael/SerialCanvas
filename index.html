@@ -419,6 +419,25 @@
                 <span>补换行</span>
               </label>
             </div>
+            <div id="mono-size-control" class="term-toolbar-controls">
+              <label class="term-field" title="等宽字号：同时作用于终端、收发日志与解析预览（8-48，终端内可 Ctrl + 滚轮缩放）">
+                <span>字号</span>
+                <select id="mono-size-preset">
+                  <option value="10">10</option>
+                  <option value="11">11</option>
+                  <option value="12" selected>12</option>
+                  <option value="14">14</option>
+                  <option value="16">16</option>
+                  <option value="18">18</option>
+                  <option value="20">20</option>
+                  <option value="custom">自定义</option>
+                </select>
+              </label>
+              <label id="mono-size-custom-field" class="term-field hidden" title="自定义字号（8-48）">
+                <span>自定义</span>
+                <input id="mono-size-custom" type="number" min="8" max="48" step="1" value="12" inputmode="numeric">
+              </label>
+            </div>
             <div id="term-toolbar-controls" class="term-toolbar-controls">
               <label class="term-field" title="发送时追加的行结束符">
                 <span>换行</span>
@@ -444,10 +463,6 @@
                   <option value="Consolas, monospace">Consolas</option>
                   <option value="&quot;Courier New&quot;, monospace">Courier New</option>
                 </select>
-              </label>
-              <label class="term-field" title="终端字号（8-48，可在终端内 Ctrl + 滚轮缩放）">
-                <span>字号</span>
-                <input id="term-font-size" type="number" min="8" max="48" step="1" value="12" inputmode="numeric">
               </label>
               <label class="term-field" title="终端配色主题">
                 <span>主题</span>
