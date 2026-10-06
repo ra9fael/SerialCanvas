@@ -7273,6 +7273,10 @@
     refs.versionModalBackdrop?.addEventListener('click', (event) => {
       if (event.target === refs.versionModalBackdrop) closeVersionModal();
     });
+    refs.shortcutModalClose?.addEventListener('click', closeShortcutModal);
+    refs.shortcutModalBackdrop?.addEventListener('click', (event) => {
+      if (event.target === refs.shortcutModalBackdrop) closeShortcutModal();
+    });
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') closeVersionModal();
       if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
@@ -7322,6 +7326,66 @@
             });
           }
         }
+      }
+    });
+    /* Application-level shortcut chords.
+
+       Registered AFTER the preset-send handler above so that, for a chord we
+       consume, the preset handler has already declined (it requires
+       !ctrlKey && !altKey) and cannot double-fire. Both listeners sit on
+       document, so this one must always call preventDefault on a chord it
+       handles or the browser default (new tab, quick-find, ...) also runs.
+
+       isTypingTarget() keeps every binding out of inputs, selects and the
+       xterm host, where the keyboard belongs to the text field or to the
+       device on the wire. */
+    document.addEventListener('keydown', (event) => {
+      if (event.defaultPrevented) return;
+      if (event.metaKey) return;
+
+      if (event.key === 'Escape') {
+        if (isShortcutModalOpen()) {
+          event.preventDefault();
+          closeShortcutModal();
+          return;
+        }
+        if (isTypingTarget(event.target)) return;
+        // Close any open menu; the version modal has its own handler above.
+        if (document.querySelector('.floating-menu.open')) {
+          event.preventDefault();
+          closeMenus();
+        }
+        return;
+      }
+
+      if (isTypingTarget(event.target)) return;
+
+      // Ctrl+` — toggle the left rail. Uses event.code so the physical key
+      // works regardless of layout, which matters on non-US keyboards.
+      if (event.ctrlKey && !event.altKey && !event.shiftKey && event.code === 'Backquote') {
+        event.preventDefault();
+        toggleSidebarCollapse();
+        return;
+      }
+
+      // Ctrl+Alt+C — cycle the corner radius.
+      if (event.ctrlKey && event.altKey && !event.shiftKey && event.code === 'KeyC') {
+        event.preventDefault();
+        cycleCornerRadius();
+        toast('圆角', t('当前：{{value}}', {
+          value: t(CORNER_LABELS[state.cornerRadius] || CORNER_LABELS.square)
+        }), 'success');
+        return;
+      }
+
+      // ? — the shortcut sheet. Unchorded on purpose: it is the one binding
+      // a user can discover without reading the manual, and it cannot collide
+      // with a preset because '?' is rarely a preset shortcut and the sheet is
+      // inert when closed.
+      if (!event.ctrlKey && !event.altKey && event.shiftKey && event.key === '?') {
+        event.preventDefault();
+        if (isShortcutModalOpen()) closeShortcutModal();
+        else openShortcutModal();
       }
     });
     document.addEventListener('click', closeMenus);
@@ -7948,6 +8012,7 @@
     renderBinarySchemaTable();
     renderExtensionButtons();
     renderExtensionPanel();
+    renderShortcutSheet();
     renderSendConfigLists('all');
     syncUserConfigMenuUi();
     syncVersionDisplay();

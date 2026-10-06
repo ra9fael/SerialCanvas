@@ -4992,6 +4992,81 @@ body.reorder-drag-active .reorder-drag-handle {
   font-size: 13px;
 }
 
+/* ---- Shortcut sheet -------------------------------------------------------
+   Reuses the version modal's shell. Keys render as kbd chips so the binding
+   text is scannable; rows are generated from SHORTCUT_GROUPS in app.core.js. */
+.shortcut-modal {
+  width: min(620px, 100%);
+}
+
+.shortcut-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.shortcut-group-title {
+  font-size: 10px;
+  letter-spacing: var(--kicker-tracking);
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.shortcut-row {
+  display: grid;
+  grid-template-columns: minmax(140px, auto) minmax(0, 1fr);
+  align-items: baseline;
+  gap: 14px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.shortcut-row:last-child {
+  border-bottom: 0;
+}
+
+.shortcut-keys {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.shortcut-keys kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 2px 7px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+}
+
+.shortcut-desc {
+  font-size: 13px;
+  color: var(--text);
+  min-width: 0;
+}
+
+.shortcut-scope {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.shortcut-note {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-soft);
+}
+
 .version-modal-close {
   width: 32px;
   height: 32px;

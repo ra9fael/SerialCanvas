@@ -40,6 +40,54 @@
   const TIMELINE_BIN_MAGIC = new Uint8Array([0x57, 0x53, 0x4c, 0x42, 0x49, 0x4e, 0x31, 0x00]);
   const appEl = document.body;
 
+  /* Keyboard shortcuts.
+
+     One table drives both the dispatcher and the shortcut sheet, so the
+     documented bindings and the working bindings cannot drift apart.
+
+     Every binding is chorded (Ctrl and/or Alt). Bare letters are deliberately
+     NOT used: the existing preset-send handler at app.main.js owns single
+     keypresses, and a bare letter here would silently shadow a user's preset.
+     The preset handler runs on document too, so a chord must additionally
+     consume the event or both handlers fire. */
+  const SHORTCUT_GROUPS = [
+    {
+      title: '应用',
+      items: [
+        { id: 'toggle-sidebar', keys: ['Ctrl', '`'], desc: '折叠 / 展开左侧配置栏', scope: '紧凑模式下切换浮层' },
+        { id: 'cycle-corner', keys: ['Ctrl', 'Alt', 'C'], desc: '切换圆角：直角 → 微圆 → 圆润' },
+        { id: 'shortcut-sheet', keys: ['?'], desc: '打开本快捷键列表', chorded: false },
+        { id: 'close-overlay', keys: ['Esc'], desc: '关闭弹窗 / 菜单', scope: '输入框与终端内不处理' }
+      ]
+    },
+    {
+      title: '串口终端',
+      items: [
+        { id: 'term-clear-line', keys: ['Ctrl', 'U'], desc: '清空当前输入行', scope: '仅本地回显模式' },
+        { id: 'term-history-prev', keys: ['↑'], desc: '上一条历史输入', scope: '仅本地回显模式' },
+        { id: 'term-history-next', keys: ['↓'], desc: '下一条历史输入', scope: '仅本地回显模式' }
+      ]
+    },
+    {
+      title: '预设发送',
+      items: [
+        { id: 'preset-letter', keys: ['A–Z'], desc: '发送匹配的预设项', scope: '在预设发送开启且焦点不在输入框时' }
+      ]
+    }
+  ];
+
+  /* True when the event target is a text-entry surface, where app-level
+     chords must not fire. The xterm host counts: xterm owns the keyboard
+     there and turns chords into bytes on the wire. */
+  function isTypingTarget(target) {
+    if (!target) return false;
+    if (target.isContentEditable) return true;
+    var tag = target.tagName || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    if (target.closest && target.closest('.xterm')) return true;
+    return false;
+  }
+
   const terminalSession = {
     buffer: '',
     history: [],
@@ -105,6 +153,9 @@
     versionModalTitle: document.getElementById('version-modal-title'),
     versionCurrentLabel: document.getElementById('version-current-label'),
     versionOnlineBox: document.getElementById('version-online-box'),
+    shortcutModalBackdrop: document.getElementById('shortcut-modal-backdrop'),
+    shortcutModalClose: document.getElementById('shortcut-modal-close'),
+    shortcutGroups: document.getElementById('shortcut-groups'),
     connectBtn: document.getElementById('connect-btn'),
     baudRate: document.getElementById('baud-rate'),
     baudRateAnchor: document.getElementById('baud-rate-anchor'),
@@ -224,6 +275,7 @@
   // Square by default: the reference design this fork adopted has no radius.
   // A user upgrading from a build without this key lands on square too.
   const CORNER_SETTINGS = ['square', 'soft', 'round'];
+  const CORNER_LABELS = { square: '直角', soft: '微圆', round: '圆润' };
   const initialSavedCorner = CORNER_SETTINGS.includes(window.__serialWebInitialCorner)
     ? window.__serialWebInitialCorner
     : 'square';
@@ -2182,6 +2234,67 @@
     document.querySelectorAll('.floating-menu.open').forEach((menu) => menu.classList.remove('open'));
     syncOverlayBackdropState();
     refs.versionModalClose?.focus();
+  }
+
+  /* ---- Shortcut sheet -----------------------------------------------------
+     Rendered from SHORTCUT_GROUPS so the list always matches the dispatcher.
+     Built with DOM calls and textContent, never innerHTML: the strings are
+     authored, but there is no reason to hand the parser any of them. */
+  function renderShortcutSheet() {
+    var host = refs.shortcutGroups;
+    if (!host) return;
+    host.textContent = '';
+    SHORTCUT_GROUPS.forEach(function(group) {
+      var section = document.createElement('section');
+      section.className = 'shortcut-group';
+      var title = document.createElement('div');
+      title.className = 'shortcut-group-title';
+      title.textContent = t(group.title);
+      section.appendChild(title);
+      group.items.forEach(function(item) {
+        var row = document.createElement('div');
+        row.className = 'shortcut-row';
+        row.dataset.shortcutId = item.id;
+        var keys = document.createElement('div');
+        keys.className = 'shortcut-keys';
+        item.keys.forEach(function(part) {
+          var kbd = document.createElement('kbd');
+          kbd.textContent = part;
+          keys.appendChild(kbd);
+        });
+        var desc = document.createElement('div');
+        desc.className = 'shortcut-desc';
+        desc.textContent = t(item.desc);
+        if (item.scope) {
+          var scope = document.createElement('span');
+          scope.className = 'shortcut-scope';
+          scope.textContent = t(item.scope);
+          desc.appendChild(scope);
+        }
+        row.appendChild(keys);
+        row.appendChild(desc);
+        section.appendChild(row);
+      });
+      host.appendChild(section);
+    });
+  }
+
+  function openShortcutModal() {
+    renderShortcutSheet();
+    refs.shortcutModalBackdrop?.classList.add('open');
+    refs.shortcutModalBackdrop?.setAttribute('aria-hidden', 'false');
+    document.querySelectorAll('.floating-menu.open').forEach((menu) => menu.classList.remove('open'));
+    syncOverlayBackdropState();
+    refs.shortcutModalClose?.focus();
+  }
+
+  function closeShortcutModal() {
+    refs.shortcutModalBackdrop?.classList.remove('open');
+    refs.shortcutModalBackdrop?.setAttribute('aria-hidden', 'true');
+  }
+
+  function isShortcutModalOpen() {
+    return Boolean(refs.shortcutModalBackdrop?.classList.contains('open'));
   }
 
   function closeVersionModal() {
