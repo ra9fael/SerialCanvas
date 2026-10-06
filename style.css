@@ -31,6 +31,14 @@
   --text-soft: #605d5d;
   --text-faint: #9b9797;
 
+  /* Terminal foreground. The console is a fixed dark surface in BOTH themes,
+     so these do NOT track --text: borrowing the page foreground paired a dark
+     colour with a dark ground in light mode (measured contrast 1.06). Values
+     are deliberately identical under .theme-dark — no override needed. */
+  --terminal-text: #f4f1ef;
+  --terminal-cursor: #ff9783;
+  --terminal-selection: rgba(255, 151, 131, 0.28);
+
   /* Single warm accent, used sparingly. */
   --accent: #ec3013;
   --accent-strong: #ae1800;
@@ -101,6 +109,10 @@ body.theme-dark {
   --text: #f4f1ef;
   --text-soft: #b4aea8;
   --text-faint: #7d7979;
+
+  /* --terminal-* are intentionally NOT repeated here. The console is dark in
+     both themes, so its palette is theme-independent; overriding these would
+     reintroduce the light-mode contrast bug. */
 
   --accent: #ff563c;
   --accent-strong: #ff9783;

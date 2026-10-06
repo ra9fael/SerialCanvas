@@ -61,12 +61,15 @@
     }
     const style = getComputedStyle(document.body);
     const read = (name, fallback) => style.getPropertyValue(name).trim() || fallback;
+    // The console keeps its own palette rather than borrowing the page's:
+    // --bg-terminal is dark in both themes, so reading --text here paired a
+    // dark foreground with a dark ground in light mode (contrast 1.06).
     return {
-      background: read('--bg-terminal', '#101216'),
-      foreground: read('--text', '#e8e8ea'),
-      cursor: read('--accent-strong', '#e8e8ea'),
-      cursorAccent: read('--bg-terminal', '#101216'),
-      selectionBackground: read('--accent-soft', 'rgba(100, 108, 255, 0.30)')
+      background: read('--bg-terminal', '#1b1918'),
+      foreground: read('--terminal-text', '#f4f1ef'),
+      cursor: read('--terminal-cursor', '#ff9783'),
+      cursorAccent: read('--bg-terminal', '#1b1918'),
+      selectionBackground: read('--terminal-selection', 'rgba(255, 151, 131, 0.28)')
     };
   }
 
