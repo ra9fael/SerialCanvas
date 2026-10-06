@@ -6056,6 +6056,7 @@
     try {
       state.theme = (snapshot.theme === 'system' || snapshot.theme === 'dark' || snapshot.theme === 'light') ? snapshot.theme : state.theme;
       if (I18N_VALID_LOCALES.includes(snapshot.locale)) state.locale = snapshot.locale;
+      if (CORNER_SETTINGS.includes(snapshot.cornerRadius)) state.cornerRadius = snapshot.cornerRadius;
       state.layoutExpanded = Boolean(snapshot.layout?.expanded);
       state.ui.monitorView = snapshot.layout?.monitorView === 'manual' ? 'manual' : 'terminal';
       if (refs.termFont && typeof snapshot.layout?.terminalFont === 'string') {
@@ -6236,6 +6237,7 @@
       savedAt: Date.now(),
       theme: browserThemeQuery.matches ? 'dark' : 'light',
       locale: 'system',
+      cornerRadius: 'square',
       layout: {
         expanded: false,
         monitorView: 'terminal',
@@ -6306,6 +6308,7 @@
       savedAt: Date.now(),
       theme: state.theme,
       locale: state.locale,
+      cornerRadius: state.cornerRadius,
       layout: {
         expanded: Boolean(state.layoutExpanded),
         monitorView: state.ui.monitorView === 'terminal' ? 'terminal' : 'manual',
@@ -7247,6 +7250,11 @@
     refs.langOpts.forEach((opt) => {
       opt.addEventListener('click', () => setLocale(opt.dataset.locale));
     });
+    refs.cornerOpts.forEach(function(opt) {
+      opt.addEventListener('click', function() {
+        handleCornerRadiusChange(opt.dataset.corner);
+      });
+    });
     refs.systemMenuBtn.addEventListener('click', () => toggleMenu(refs.systemMenu));
     refs.downloadLocalLink?.addEventListener('click', downloadLocalIndexHtml);
     refs.versionInfoBtn?.addEventListener('click', (event) => {
@@ -7929,6 +7937,7 @@
     state.ui.timelinePickerSignature = '';
     if (refs.chartList) delete refs.chartList.dataset.rendered;
     applyTheme();
+    applyCornerRadius();
     applyLayout(false);
     setAdvancedPanel();
     updateParserModeUI();
@@ -7998,6 +8007,7 @@
     syncVersionDisplay();
     syncUserConfigMenuUi();
     applyTheme();
+    applyCornerRadius();
     applyLayout(false);
     setAdvancedPanel();
     updateSignalControlsUI();

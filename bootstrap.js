@@ -39,6 +39,12 @@
   window.__serialWebInitialTheme = getInitialTheme();
   window.__serialWebResolveLocale = resolveLocale;
   window.__serialWebInitialLocale = getInitialLocaleSetting();
+  // Read here, not at app boot: the stylesheet selects the corner radius from
+  // data-corner, so a preference set by the app alone would render one frame at
+  // the default and then snap.
+  window.__serialWebInitialCorner = ['square', 'soft', 'round'].includes(initialPrefs?.cornerRadius)
+    ? initialPrefs.cornerRadius
+    : 'square';
   document.documentElement.lang = resolveLocale(window.__serialWebInitialLocale) === 'zh' ? 'zh-CN' : 'en';
   window.__applySerialWebInitialBodyClasses = () => {
     const body = document.body;
@@ -52,6 +58,11 @@
       || host === '127.0.0.1'
       || host === '::1'
       || host === '[::1]';
+    const corner = ['square', 'soft', 'round'].includes(window.__serialWebInitialCorner)
+      ? window.__serialWebInitialCorner
+      : 'square';
+    document.documentElement.setAttribute('data-corner', corner);
+    body.setAttribute('data-corner', corner);
     body.classList.toggle('theme-dark', window.__serialWebInitialTheme === 'dark');
     body.classList.toggle('compact-single', compact);
     body.classList.toggle('layout-expanded', Boolean(layout.expanded));

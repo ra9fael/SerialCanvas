@@ -8,7 +8,7 @@ committed feature that was never wired up, and one is a design question.
 
 ---
 
-## 1. Terminal foreground does not follow the theme (bug)
+## 1. Terminal foreground does not follow the theme (bug) — FIXED in `eeb3b31`
 
 ### Symptom
 
@@ -43,84 +43,98 @@ dark foreground with a dark background.
 This is a phase-1 regression I introduced, and it is exactly the risk the plan
 flagged in §3.4: colour owned by JS versus colour owned by CSS.
 
-### Fix
-
-Give the terminal its own foreground token instead of borrowing the page's. The
-terminal is a fixed dark surface in both themes, so its palette should be
-theme-independent:
+### Fix applied
 
 ```css
 :root {
   --bg-terminal: #1b1918;
   --terminal-text: #f4f1ef;        /* NEW — always light */
   --terminal-cursor: #ff9783;
-  --terminal-selection: #471d16;
+  --terminal-selection: rgba(255, 151, 131, 0.28);
 }
 ```
 
-`app.terminal.js:57` becomes:
+`app.terminal.js:57` now reads:
 
 ```js
 foreground: read('--terminal-text', '#f4f1ef'),
 cursor: read('--terminal-cursor', '#ff9783'),
 cursorAccent: read('--bg-terminal', '#1b1918'),
-selectionBackground: read('--terminal-selection', 'rgba(255, 150, 131, 0.28)')
+selectionBackground: read('--terminal-selection', 'rgba(255, 151, 131, 0.28)')
 ```
 
-No dark-theme override needed — the values are the same in both themes by design.
-This also fixes the `solarized-light` skin's interaction, which currently inherits
-the same broken default when the `<select>` is empty.
+Declared once in `:root` and **deliberately not repeated** under `.theme-dark` —
+the console is a fixed dark surface in both themes, so its palette is
+theme-independent. A comment in the dark block says so, to stop a future override
+reintroducing the bug.
 
-Note the explicit `TERMINAL_SKINS` entries are unaffected: those six skins carry
-their own literal colours and never reach the `read()` path.
+The six explicit `TERMINAL_SKINS` entries carry their own literal colours and
+never reach the `read()` path, so they are untouched.
 
-### Verification
+### Verified
 
-Re-run `audit/probe-terminal.mjs` in both themes. Light must reach ≥ 4.5, and
-must match the dark-mode figure closely since the surfaces are now identical.
+| Theme | foreground | background | Contrast |
+| --- | --- | --- | --- |
+| light | `rgb(244, 241, 239)` | `rgb(27, 25, 24)` | **15.58** ✅ |
+| dark | `rgb(244, 241, 239)` | `rgb(18, 17, 16)` | 16.77 ✅ |
 
 ---
 
-## 2. The corner-radius control does not exist (missing feature)
+## 2. The corner-radius control — SHIPPED
 
-You are right that there is no control. Phase 1 shipped the **token layer only**
-(`--radius-scale` plus the `data-corner` selectors, both verified working), and
-the plan filed the UI under Phase 5. No markup, no state, no persistence.
+Phase 1 shipped the token layer; the UI is now in place and verified end to end.
 
-So the current behaviour is: **radius is already off by default**
-(`--radius-scale: 0`), it just cannot be turned on from the UI. Nothing is wrong
-with the default; the switch is missing.
+| Piece | Location |
+| --- | --- |
+| Markup | `index.html`, `menu-corner-group` after the language row |
+| `refs` | `app.core.js` — `cornerGroup`, `cornerOpts` |
+| State | `state.cornerRadius`, validated against `CORNER_SETTINGS` |
+| Apply | `applyCornerRadius()` beside `applyTheme()`; sets `data-corner` on `<html>` and `<body>` |
+| Handler | `handleCornerRadiusChange()` + `cycleCornerRadius()` |
+| Persistence | `cornerRadius` in `buildLocalPrefsSnapshot()` and `applyLocalPrefsSnapshot()` |
+| Reset | `cornerRadius: 'square'` added to `buildDefaultUserConfigSnapshot()` |
+| First paint | `bootstrap.js` sets `data-corner` inside `__applySerialWebInitialBodyClasses()` |
+| i18n | `圆角：` / `直角` / `微圆` / `圆润` in `app.lang.js` |
 
-### What has to be added
+### Verified
 
-| Piece | Location | Notes |
-| --- | --- | --- |
-| Markup | `index.html`, after the language row (~line 110) | Reuse `.menu-theme-line` / `.menu-theme-group`; the sliding `::before` already supports three stops |
-| `refs` | `app.core.js:73` | `cornerGroup`, `cornerOpts` — mirroring `themeGroup` / `themeOpts` |
-| State | `app.core.js:216` area | `cornerRadius: 'square'` |
-| Apply | beside `applyTheme()` (`app.core.js:1469`) | `applyCornerRadius()` sets `data-corner` on `<html>` **and** `<body>`, toggles `is-active`, calls `refitTerminal()` |
-| Handler | beside `handleThemeChange()` (`app.core.js:1499`) | `handleCornerRadiusChange()` ending in `scheduleLocalPrefsSave()` |
-| Persistence | `buildLocalPrefsSnapshot()` (`app.main.js:6299`) | `cornerRadius` next to `theme` / `locale` |
-| Wiring | `attachEventListeners()` (`app.main.js:7241`) | Three lines, `cornerOpts` pattern |
-| **First paint** | `bootstrap.js:43` | **The one that is easy to miss** |
-| i18n | `app.lang.js` | Chinese source: `圆角：` / `直角` / `微圆` / `圆润` |
+- Default is `square`; a user with no stored value lands there too.
+- All three settings move real elements: `.panel` 0 / 7 / 14px, `.online-mode-chip`
+  0 / 499.5 / 999px.
+- `.status-dot` stays `50%` at every setting.
+- **First paint**: reloading with `round` saved renders 14px immediately — no
+  one-frame snap back to the default.
+- Persistence survives reload in both directions.
+- Clearing settings via the app's own button returns to `square`.
+- English labels read `Corner:` / `Square` / `Soft` / `Round`.
 
-### The first-paint trap, restated
+### Two bugs found while verifying this
 
-`bootstrap.js` must read `prefs.cornerRadius` inside
-`__applySerialWebInitialBodyClasses()` and set `data-corner` there. If only the
-app sets it at boot, a saved `round` value renders one frame at `square` and then
-snaps — visible flicker on every reload. The theme class is already set in
-`bootstrap.js` for exactly this reason; the radius attribute needs the same
-treatment.
+1. **`buildDefaultUserConfigSnapshot()` omitted `cornerRadius`.** "Clear
+   settings" therefore left `state.cornerRadius` at its previous value, so the
+   reset did not reset. Added `cornerRadius: 'square'` alongside `theme` /
+   `locale`.
+2. **`.menu-corner-opt` was missing from the shared base rule.** Only the
+   `.is-active` colour rule matched, so the inactive labels had no layout at all
+   and the active label was invisible against the sliding indicator. Added it to
+   the `.menu-theme-opt, .menu-lang-opt` block.
 
-### Also needed for the switch to be *visible*
+### Also fixed here: 10 stale `#eef2ff` labels
 
-Right now `--radius-scale` only drives `--radius` and `--radius-small`, which
-have 3 call sites. The 94 hardcoded `border-radius` declarations ignore it, so
-flipping to `round` would move almost nothing. **Phase 2 is a prerequisite for
-this feature to look like it works.** Do not ship the control before Phase 2, or
-it is a dead switch.
+The active label colour was hardcoded `#eef2ff`, a pale blue chosen for the old
+indigo accent. Against `#ec3013` it fell below the AA threshold, so "System",
+"Square" and the active mode tabs were barely readable. All ten now use
+`var(--bg)`, which reads cleanly on the accent.
+
+One exception kept its own rule: `.timeline-freeze-btn` in the frozen state sits
+on `--accent-soft`, not on `--accent`, so it uses `var(--accent)` instead.
+
+### Note on ordering
+
+This control was deliberately not shipped before the radius tokenisation
+(`0eb7118`). With only 3 call sites following `--radius-scale`, flipping the
+switch would have moved almost nothing — a dead control. Tokenising first was
+the whole point of doing Phase 2 before Phase 5's UI work.
 
 ---
 
@@ -205,10 +219,12 @@ the shortcut sheet: a modal listing every binding, opened with `?`. Native
 
 ## Recommended order
 
-1. **Fix the terminal foreground** (§1). Small, self-contained, and it is a
-   regression that makes light mode unusable.
-2. **Phase 2 radius tokenisation.** Blocked by nothing, unblocks item 3.
-3. **Ship the corner-radius control** (§2). Only meaningful after step 2.
+Status as of `eeb3b31` / `0eb7118`:
+
+1. ~~**Fix the terminal foreground**~~ — **done**, `eeb3b31`.
+2. ~~**Phase 2 radius tokenisation**~~ — **done** (radius half), `0eb7118`. The
+   shadow / `rgba()` / gradient sweep is still open.
+3. ~~**Ship the corner-radius control**~~ — **done**.
 4. **Layout: the viewport-flex rail** (3a, one line) and the **status-pill
    relative age** (3a, small). Independent of everything else.
 5. **Shortcut sheet + the chorded shortcuts** (3d, 3e). Largest new surface,
@@ -216,3 +232,12 @@ the shortcut sheet: a modal listing every binding, opened with `?`. Native
 
 Item 5 is deliberately last: shortcuts are the easiest thing to break silently,
 and they are worth most once the layout they navigate is settled.
+
+### Remaining Phase 2 work
+
+| Item | Count | Note |
+| --- | --- | --- |
+| `box-shadow` | 87 | Reduce to overlays only: `.floating-menu`, modal backdrops, `.toast`, chart flyouts |
+| `rgba()` | 198 | Convert to tokens. **Audit the terminal-adjacent ones** — some translucency is load-bearing and must stay deliberate |
+| `gradient()` | 23 | Flat fills |
+| `backdrop-filter` | 4 | Two already `none` |

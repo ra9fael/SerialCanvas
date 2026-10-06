@@ -475,7 +475,7 @@ body.layout-expanded .logo-mode-switch::before {
 }
 
 .logo-mode-btn.is-active {
-  color: #eef2ff;
+  color: var(--bg);
 }
 
 #serial-mode-btn .logo-mode-icon,
@@ -488,7 +488,7 @@ body.layout-expanded #serial-mode-btn {
 }
 
 body.layout-expanded #parser-mode-btn {
-  color: #eef2ff;
+  color: var(--bg);
 }
 
 .logo-mode-icon {
@@ -536,7 +536,7 @@ body.layout-expanded #parser-mode-btn {
 .primary-btn,
 .wide-send-btn {
   background: var(--accent);
-  color: #eef2ff;
+  color: var(--bg);
   box-shadow: 0 12px 24px rgba(86, 114, 205, 0.24);
 }
 
@@ -1114,7 +1114,8 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
 }
 
 .menu-theme-opt,
-.menu-lang-opt {
+.menu-lang-opt,
+.menu-corner-opt {
   position: relative;
   z-index: 1;
   min-width: 0;
@@ -1132,9 +1133,13 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
   transition: color 0.16s ease;
 }
 
+/* Active label sits on the sliding accent indicator. The old value was a pale
+   blue picked for the indigo accent; against #ec3013 it fell below the AA
+   threshold. --bg is the light warm grey, which reads cleanly on the accent. */
 .menu-theme-opt.is-active,
-.menu-lang-opt.is-active {
-  color: #eef2ff;
+.menu-lang-opt.is-active,
+.menu-corner-opt.is-active {
+  color: var(--bg);
 }
 
 .runtime-mode-label {
@@ -1628,8 +1633,9 @@ body.theme-dark .timeline-freeze-btn:focus-visible {
   background: var(--accent-soft);
 }
 
+/* Sits on --accent-soft, not on --accent: dark ink, not the light label colour. */
 body.theme-dark .timeline-ribbon-shell.is-live-frozen .timeline-freeze-btn {
-  color: #eef2ff;
+  color: var(--accent);
   border-color: var(--accent);
   background: var(--accent);
 }
@@ -2779,7 +2785,7 @@ body.layout-expanded .charts-panel {
 }
 
 .mode-tabs .mode-tab.active {
-  color: #eef2ff;
+  color: var(--bg);
 }
 
 .parser-config-card,
@@ -2861,7 +2867,7 @@ body.theme-dark .auto-detect-btn {
 .auto-detect-btn.is-ready {
   background: var(--accent);
   border-color: transparent;
-  color: #eef2ff;
+  color: var(--bg);
   box-shadow: 0 12px 24px rgba(86, 114, 205, 0.18);
 }
 
@@ -3555,7 +3561,7 @@ body.compact-single.layout-expanded .chart-panel.is-open {
 .chart-tool-btn.chart-auto-btn.is-active {
   border-color: transparent;
   background: var(--accent);
-  color: #eef2ff;
+  color: var(--bg);
   box-shadow: 0 12px 24px rgba(86, 114, 205, 0.22);
 }
 
@@ -3872,7 +3878,7 @@ body.theme-dark .chart-flyout {
 .chart-axis-binding-option.is-active {
   border-color: transparent;
   background: var(--accent);
-  color: #eef2ff;
+  color: var(--bg);
 }
 
 body.theme-dark .chart-axis-binding-option {
@@ -4031,7 +4037,7 @@ body.layout-expanded .monitor-live-meta {
   border-radius: var(--radius-pill);
   border: 1px solid transparent;
   background: var(--accent);
-  color: #eef2ff;
+  color: var(--bg);
   box-shadow: 0 12px 24px rgba(52, 81, 178, 0.22);
   display: grid;
   place-items: center;
@@ -4894,7 +4900,7 @@ body.reorder-drag-active .reorder-drag-handle {
 .toast-action-btn.primary {
   border-color: transparent;
   background: var(--accent);
-  color: #eef2ff;
+  color: var(--bg);
 }
 
 .toast.success .toast-title {

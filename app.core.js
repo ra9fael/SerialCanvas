@@ -71,6 +71,8 @@
     themeOpts: document.querySelectorAll('#menu-theme-group .menu-theme-opt'),
     langGroup: document.getElementById('menu-language-group'),
     langOpts: document.querySelectorAll('#menu-language-group .menu-lang-opt'),
+    cornerGroup: document.getElementById('menu-corner-group'),
+    cornerOpts: document.querySelectorAll('#menu-corner-group .menu-corner-opt'),
     timelineSelect: document.getElementById('timeline-select'),
     stopRecordBtn: document.getElementById('stop-record-btn'),
     timelinePickerBtn: document.getElementById('timeline-picker-btn'),
@@ -219,10 +221,17 @@
   const initialSavedLocale = ['zh', 'en', 'system'].includes(window.__serialWebInitialLocale)
     ? window.__serialWebInitialLocale
     : 'system';
+  // Square by default: the reference design this fork adopted has no radius.
+  // A user upgrading from a build without this key lands on square too.
+  const CORNER_SETTINGS = ['square', 'soft', 'round'];
+  const initialSavedCorner = CORNER_SETTINGS.includes(window.__serialWebInitialCorner)
+    ? window.__serialWebInitialCorner
+    : 'square';
   const state = {
     version: VERSION,
     theme: initialSavedTheme,
     locale: initialSavedLocale,
+    cornerRadius: initialSavedCorner,
     layoutExpanded: false,
     parserMode: 'text',
     serial: {
@@ -1483,6 +1492,22 @@
     refitTerminal();
   }
 
+  /* Corner radius. One integer drives every radius in the stylesheet via
+     --radius-scale; `data-corner` on <html> and <body> selects the value.
+     bootstrap.js sets the same attribute from the saved preference before the
+     first paint, so this only has to keep it in sync afterwards. */
+  function applyCornerRadius() {
+    var value = CORNER_SETTINGS.indexOf(state.cornerRadius) >= 0 ? state.cornerRadius : 'square';
+    document.documentElement.setAttribute('data-corner', value);
+    appEl.setAttribute('data-corner', value);
+    if (refs.cornerGroup) {
+      refs.cornerOpts.forEach(function(opt) {
+        opt.classList.toggle('is-active', opt.dataset.corner === value);
+      });
+    }
+    refitTerminal();
+  }
+
   function syncThemeFromBrowser() {
     if (state.theme === 'system') {
       applyTheme();
@@ -1506,6 +1531,17 @@
   function toggleTheme() {
     var next = state.theme === 'system' ? 'light' : state.theme === 'light' ? 'dark' : 'system';
     handleThemeChange(next);
+  }
+
+  function handleCornerRadiusChange(value) {
+    state.cornerRadius = CORNER_SETTINGS.indexOf(value) >= 0 ? value : 'square';
+    applyCornerRadius();
+    scheduleLocalPrefsSave();
+  }
+
+  function cycleCornerRadius() {
+    var index = CORNER_SETTINGS.indexOf(state.cornerRadius);
+    handleCornerRadiusChange(CORNER_SETTINGS[(index + 1) % CORNER_SETTINGS.length]);
   }
 
   /* --------------------------------------------------------------------------
