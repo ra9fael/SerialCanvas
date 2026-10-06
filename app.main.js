@@ -361,8 +361,10 @@
 
   function updateSerialStatus() {
     refs.serialStatusDot.className = `status-dot ${state.serial.connected ? 'connected' : (state.serial.supported ? 'warn' : 'offline')}`;
+    // The pill answers "is it alive?" faster than a clock alone: state plus age.
+    // Driven by the existing 250ms status clock, so no new timer is involved.
     refs.serialStatusText.textContent = state.serial.connected
-      ? t('串口已连接')
+      ? t('串口已连接 · {{age}}', { age: formatRelativeAge(Date.now() - state.serial.connectedAt) })
       : (state.serial.supported ? t('就绪，等待连接') : t('不支持 Web Serial API'));
     refs.deviceVid.textContent = state.serial.deviceInfo.vid;
     refs.devicePid.textContent = state.serial.deviceInfo.pid;

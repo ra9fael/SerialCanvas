@@ -117,7 +117,7 @@
     '正在重连 | 点击取消重连': 'Reconnecting | click to cancel',
     '重连失败 | 串口可能被占用': 'Reconnect failed | port may be in use',
     '{{action}} | 串口可能被占用': '{{action}} | port may be in use',
-    '串口已连接': 'Serial port connected',
+    '串口已连接 · {{age}}': 'Connected · {{age}}',
     '串口已连接，波特率 {{baudRate}}。': 'Serial port connected at {{baudRate}} baud.',
     '串口已断开。': 'Serial port closed.',
     '串口连接已丢失。': 'Serial connection lost.',

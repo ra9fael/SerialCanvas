@@ -584,6 +584,19 @@
     return `${h}:${m}:${s}`;
   }
 
+  /* Compact "time since" for the status pill: 3s / 12m / 4h. Deliberately
+     coarser than formatDuration -- the pill answers "is it alive?", not
+     "exactly when did it connect". */
+  function formatRelativeAge(ms) {
+    const seconds = Math.max(0, Math.floor(ms / 1000));
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h`;
+    return `${Math.floor(hours / 24)}d`;
+  }
+
   function nowPreciseMs() {
     if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
       return HIGH_RES_TIME_EPOCH_MS + performance.now();
