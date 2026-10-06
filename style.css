@@ -149,7 +149,7 @@ body.theme-dark {
 *::-webkit-scrollbar-thumb {
   min-height: 24px;
   min-width: 24px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 3px solid transparent;
   background: var(--scrollbar-thumb);
   background-clip: content-box;
@@ -278,7 +278,9 @@ a {
   align-items: stretch;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 0 0 calc(var(--radius) + 4px) calc(var(--radius) + 4px);
+  /* Bottom corners only: the top edge meets the viewport. The +4px inset scaled
+   with the token before, which left a 4px round corner at --radius-scale 0. */
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
   backdrop-filter: none;
 }
@@ -310,7 +312,7 @@ a {
   min-width: 0;
   width: max-content;
   max-width: 100%;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 0 0 0 8px;
   border: 1px solid var(--border-strong);
   background:
@@ -518,7 +520,7 @@ body.layout-expanded #parser-mode-btn {
 .icon-btn,
 .wide-send-btn,
 .mini-btn {
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, opacity 0.16s ease;
 }
 
@@ -601,7 +603,7 @@ body.theme-dark .mini-btn {
   display: grid;
   gap: 4px;
   padding: 6px 8px;
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--bg-panel);
   min-width: 0;
@@ -674,7 +676,7 @@ select,
 .queue-table textarea,
 .queue-table input {
   width: 100%;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-strong);
   background: var(--bg-panel-strong);
   color: var(--text);
@@ -742,7 +744,7 @@ select::-ms-expand {
   min-height: 34px;
   padding: 0 9px 0 10px;
   border: 1px solid var(--border-strong);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: var(--bg-panel-strong);
   color: var(--text);
   display: flex;
@@ -882,7 +884,7 @@ select:focus,
   right: 0;
   width: 300px;
   background: var(--bg-panel-strong);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-strong);
   box-shadow: var(--shadow);
   padding: 8px;
@@ -909,7 +911,7 @@ body.runtime-local #download-local-link {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 8px 10px;
   color: var(--text);
   font-size: 12px;
@@ -928,7 +930,7 @@ body.runtime-local #download-local-link {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 8px 10px;
   color: var(--text);
   font-size: 12px;
@@ -961,7 +963,7 @@ body.runtime-local #download-local-link {
   gap: 5px;
   min-height: 34px;
   padding: 5px 6px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: rgba(86, 114, 205, 0.06);
 }
 
@@ -988,7 +990,7 @@ body.runtime-local #download-local-link {
   flex: 1 1 0;
   justify-content: center;
   padding: 4px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-xs);
   font-size: 11px;
   white-space: nowrap;
   background: var(--bg-panel-strong);
@@ -1051,7 +1053,7 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
   gap: 6px;
   min-height: 34px;
   padding: 5px 6px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: rgba(86, 114, 205, 0.06);
   margin-top: 4px;
 }
@@ -1074,7 +1076,7 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
   flex: 1 1 auto;
   min-width: 0;
   padding: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
   background: var(--bg-panel-strong);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
@@ -1087,7 +1089,7 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
   bottom: 0;
   left: 0;
   width: calc(33.333%);
-  border-radius: 8px;
+  border-radius: var(--radius-xs);
   background: var(--accent);
   border: 1px solid rgba(255,255,255,0.14);
   box-shadow: 0 10px 20px rgba(86, 114, 205, 0.2);
@@ -1118,7 +1120,7 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
   min-width: 0;
   min-height: 28px;
   padding: 4px 6px;
-  border-radius: 7px;
+  border-radius: var(--radius-xs);
   border: 1px solid transparent;
   background: transparent;
   color: var(--text);
@@ -1145,7 +1147,7 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
 .online-mode-chip {
   display: inline-flex;
   flex: 0 0 auto;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 3px 8px;
   border: 1px solid rgba(86, 114, 205, 0.22);
   background: rgba(86, 114, 205, 0.1);
@@ -1201,7 +1203,7 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
   appearance: none;
   height: 20px;
   margin: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   outline: none;
   cursor: pointer;
@@ -1211,13 +1213,13 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
 
 #timeline-slider::-webkit-slider-runnable-track {
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: linear-gradient(90deg, rgba(29,122,242,0.12), rgba(14,159,110,0.14));
 }
 
 #timeline-slider::-moz-range-track {
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: linear-gradient(90deg, rgba(29,122,242,0.12), rgba(14,159,110,0.14));
 }
 
@@ -1248,7 +1250,7 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
   inset: 50% auto auto 0;
   transform: translateY(-50%);
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--timeline-fill);
   pointer-events: none;
   width: 0%;
@@ -1296,7 +1298,7 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
   position: relative;
   width: 72px;
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   overflow: hidden;
   background: rgba(86, 114, 205, 0.14);
 }
@@ -1373,7 +1375,7 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
   min-width: 0;
   min-height: 40px;
   padding: 6px 8px 5px 7px;
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg-panel);
   display: grid;
@@ -1394,7 +1396,7 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
   width: 42px;
   min-width: 42px;
   height: 28px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
   background: rgba(18, 28, 37, 0.12);
   color: var(--accent-strong);
@@ -1422,7 +1424,7 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
   width: 10px;
   height: 10px;
   display: block;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: currentColor;
 }
 
@@ -1514,7 +1516,7 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
 .timeline-live-bar {
   width: 100%;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   overflow: hidden;
   background: rgba(86, 114, 205, 0.14);
   position: relative;
@@ -1559,7 +1561,7 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
   width: 28px;
   min-width: 28px;
   height: 28px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(86, 114, 205, 0.30);
   background:
     linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.50));
@@ -1712,7 +1714,7 @@ body.theme-dark .topbar .timeline-picker-btn {
   --timeline-picker-row-h: 50px;
   gap: 6px;
   padding: 8px;
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg-panel-strong);
   box-shadow: var(--shadow);
@@ -1746,7 +1748,7 @@ body.theme-dark .topbar .timeline-picker-btn {
   gap: 3px;
   align-content: center;
   text-align: left;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   padding: 8px 11px 9px;
   border: 1px solid transparent;
   background: rgba(86, 114, 205, 0.05);
@@ -1792,7 +1794,7 @@ body.theme-dark .topbar .timeline-picker-btn {
   align-items: center;
   gap: 4px;
   padding: 5px 2px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.52);
   color: var(--text-main);
@@ -1845,7 +1847,7 @@ body.theme-dark .topbar .timeline-picker-btn {
   display: none;
   gap: 6px;
   padding: 6px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-panel-strong);
   box-shadow: var(--shadow);
@@ -1871,7 +1873,7 @@ body.theme-dark .topbar .timeline-picker-btn {
 .timeline-export-option {
   width: 100%;
   min-height: 26px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.52);
   color: var(--text-main);
@@ -1909,7 +1911,7 @@ body.theme-dark .timeline-export-btn.analysis.active {
   height: var(--timeline-picker-row-h);
   min-height: var(--timeline-picker-row-h);
   margin-top: 2px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.52);
   color: var(--text-main);
@@ -1928,7 +1930,7 @@ body.theme-dark .timeline-export-btn.analysis.active {
   width: 10px;
   height: 10px;
   display: block;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: currentColor;
 }
 
@@ -1999,7 +2001,7 @@ body.layout-expanded:not(.compact-single) .expanded-left-top {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0;
   padding: 0;
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border-strong);
   background: var(--bg-panel-strong);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
@@ -2012,7 +2014,7 @@ body.layout-expanded:not(.compact-single) .expanded-left-top {
   bottom: 0;
   left: 0;
   width: calc(50%);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: var(--accent);
   border: 1px solid rgba(255,255,255,0.14);
   box-shadow: 0 10px 20px rgba(86, 114, 205, 0.2);
@@ -2126,7 +2128,7 @@ body.config-collapsed:not(.compact-single):not(.layout-expanded) .left-column {
 .config-panel .toggle-row {
   min-height: 40px;
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
 }
 
 .panel-head {
@@ -2223,7 +2225,7 @@ body.theme-dark .connect-control-box {
   gap: 3px;
   min-height: 100%;
   padding: 5px 6px 4px;
-  border-radius: 0 14px 14px 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
   border: 1px solid var(--border);
   background: var(--bg-panel-strong);
   white-space: nowrap;
@@ -2383,7 +2385,7 @@ html[lang="en"] .reconnect-chip .reconnect-label-text {
   grid-template-columns: minmax(0, 1fr) 32px;
   min-width: 0;
   border: 1px solid var(--border-strong);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: var(--bg-panel-strong);
   overflow: hidden;
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
@@ -2491,7 +2493,7 @@ html[lang="en"] .reconnect-chip .reconnect-label-text {
   min-height: 36px;
   width: 100%;
   padding: 0 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   border: 1px dashed var(--border);
   background: rgba(255,255,255,0.12);
   display: inline-flex;
@@ -2555,7 +2557,7 @@ body.theme-dark .signal-readout {
   justify-content: space-between;
   flex-wrap: nowrap;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   background: rgba(255,255,255,0.18);
   cursor: pointer;
@@ -2608,7 +2610,7 @@ html[lang="en"] .toggle-row .mini-label {
 .device-card,
 .stat-card {
   min-width: 0;
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   padding: 12px 14px;
   background: var(--bg-panel-strong);
@@ -2655,7 +2657,7 @@ html[lang="en"] .toggle-row .mini-label {
 .layout-toggle-btn {
   width: 100%;
   min-height: 46px;
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   border: 1px dashed var(--border-strong);
   background: rgba(86, 114, 205, 0.08);
   color: var(--signal);
@@ -2748,7 +2750,7 @@ body.layout-expanded .charts-panel {
   left: 0;
   right: auto;
   width: calc(50%);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--accent);
   transition: left 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
@@ -2764,7 +2766,7 @@ body.layout-expanded .charts-panel {
   min-width: 0;
   min-height: 30px;
   padding: 4px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-soft);
@@ -2783,7 +2785,7 @@ body.layout-expanded .charts-panel {
 .parser-config-card,
 .parser-results-card {
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   background: var(--bg-panel);
   padding: 12px;
   display: grid;
@@ -2841,7 +2843,7 @@ body.layout-expanded .charts-panel {
 .auto-detect-btn {
   min-height: 30px;
   padding: 4px 12px;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-strong);
   background: rgba(255,255,255,0.18);
   color: var(--text-soft);
@@ -2866,7 +2868,7 @@ body.theme-dark .auto-detect-btn {
 .text-rule-editor {
   position: relative;
   min-height: 48px;
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg-panel-strong);
   overflow: hidden;
@@ -2951,7 +2953,7 @@ body.theme-dark .auto-detect-btn {
   display: inline;
   padding: 0;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
   box-shadow: inset 0 0 0 1px rgba(86, 114, 205, 0.18);
@@ -3052,7 +3054,7 @@ body.theme-dark .text-rule-tag.kind-int {
   position: relative;
   padding: 3px;
   padding-left: 28px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.08);
 }
@@ -3072,7 +3074,7 @@ body.theme-dark .binary-schema-row {
   min-width: 0;
   box-sizing: border-box;
   padding: 3px 5px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
   background: var(--bg-panel-strong);
   color: var(--text);
@@ -3085,7 +3087,7 @@ body.theme-dark .binary-schema-row {
   min-height: 26px;
   height: 26px;
   padding: 0 6px 0 6px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-size: 11px;
   gap: 4px;
 }
@@ -3143,7 +3145,7 @@ body.theme-dark .binary-schema-row {
   min-width: 138px;
   flex: 0 0 138px;
   min-height: 60px;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.08);
   padding: 8px 10px;
@@ -3292,7 +3294,7 @@ body.parser-results-expanded .parser-result-card span {
   top: calc(100% + 8px);
   width: 280px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-panel-strong);
   box-shadow: var(--shadow);
@@ -3362,7 +3364,7 @@ body.theme-dark .danger-btn:focus-visible {
 .insight-card {
   min-height: 0;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   background: var(--bg-panel-strong);
   padding: 14px;
   display: grid;
@@ -3379,7 +3381,7 @@ body.theme-dark .danger-btn:focus-visible {
 .chip {
   display: inline-flex;
   align-items: center;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 6px 10px;
   background: rgba(86, 114, 205, 0.1);
   border: 1px solid rgba(86, 114, 205, 0.14);
@@ -3402,7 +3404,7 @@ body.theme-dark .danger-btn:focus-visible {
   min-height: 0;
   margin: 0;
   padding: 10px 12px;
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   background: var(--bg-terminal);
   overflow: auto;
   font-size: 12px;
@@ -3443,7 +3445,7 @@ body.layout-expanded:not(.compact-single) .chart-list {
 
 .chart-panel {
   position: relative;
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--bg-panel);
   padding: 14px;
@@ -3454,7 +3456,7 @@ body.layout-expanded:not(.compact-single) .chart-list {
 
 .chart-add-strip {
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   background: var(--bg-panel);
   padding: 12px 14px;
   box-shadow: var(--shadow-soft);
@@ -3518,7 +3520,7 @@ body.compact-single.layout-expanded .chart-panel.is-open {
 .chart-tool-btn {
   width: 34px;
   height: 34px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--chart-tool-border, var(--border));
   background: var(--chart-tool-bg, var(--bg-panel-strong));
   color: var(--chart-tool-color, var(--text));
@@ -3573,7 +3575,7 @@ body.compact-single.layout-expanded .chart-panel.is-open {
 
 .chart-flyout {
   position: absolute;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--chart-tool-border, var(--border));
   background: var(--chart-tool-bg, var(--bg-panel-strong));
   box-shadow: var(--shadow-soft);
@@ -3628,7 +3630,7 @@ body.theme-dark .chart-flyout {
   width: 100%;
   min-height: 42px;
   padding: 8px 10px;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-strong);
   background: var(--bg-panel-strong);
   color: var(--text);
@@ -3665,7 +3667,7 @@ body.theme-dark .chart-flyout {
 .chart-config-field select,
 .chart-config-field textarea {
   width: 100%;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-strong);
   background: var(--bg-panel-strong);
   color: var(--text);
@@ -3687,7 +3689,7 @@ body.theme-dark .chart-flyout {
   position: relative;
   min-height: 140px;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
 }
 
 .chart-panel-resize-handle {
@@ -3751,7 +3753,7 @@ body.theme-dark .chart-flyout {
   min-height: 34px;
   max-height: 34px;
   padding: 0 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--chart-tool-border);
   background: var(--chart-tool-bg);
   color: var(--chart-tool-color);
@@ -3784,7 +3786,7 @@ body.theme-dark .chart-flyout {
 
 .chart-axis-overlay {
   pointer-events: none;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--accent);
   background: var(--accent-soft);
   color: var(--accent-strong);
@@ -3828,7 +3830,7 @@ body.theme-dark .chart-flyout {
   overflow-y: auto;
   overscroll-behavior: contain;
   box-sizing: border-box;
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   color: var(--text-soft);
   transform: translateY(-4px);
   z-index: 80;
@@ -3855,7 +3857,7 @@ body.theme-dark .chart-flyout {
   color: var(--text-soft);
   min-height: 28px;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 12px;
   font-weight: 700;
   text-align: left;
@@ -4009,7 +4011,7 @@ body.layout-expanded .monitor-live-meta {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   padding: 14px;
   border: 1px solid var(--border);
   background: var(--bg-terminal);
@@ -4026,7 +4028,7 @@ body.layout-expanded .monitor-live-meta {
   width: 38px;
   height: 38px;
   min-width: 38px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid transparent;
   background: var(--accent);
   color: #eef2ff;
@@ -4104,7 +4106,7 @@ body.layout-expanded .monitor-live-meta {
   max-width: min(30ch, 42vw);
   margin-left: 6px;
   padding: 1px 6px;
-  border-radius: 7px;
+  border-radius: var(--radius-xs);
   border: 1px solid currentColor;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4192,7 +4194,7 @@ body.send-extension-resizing {
   max-height: var(--send-manual-h);
   resize: none;
   padding: 9px 11px;
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-strong);
   background: var(--bg-panel-strong);
   color: var(--text);
@@ -4210,7 +4212,7 @@ body.send-extension-resizing {
   font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.04em;
-  border-radius: 16px;
+  border-radius: var(--radius-md);
 }
 
 .send-modebar {
@@ -4230,7 +4232,7 @@ body.send-extension-resizing {
   align-items: center;
   min-height: 34px;
   padding: 4px 7px;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-strong);
   background: rgba(255, 255, 255, 0.4);
   transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
@@ -4280,7 +4282,7 @@ body.theme-dark .send-mode-tile {
   height: 16px;
   min-width: 16px;
   padding: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border-strong);
   background: transparent;
   display: grid;
@@ -4292,7 +4294,7 @@ body.theme-dark .send-mode-tile {
   content: "";
   width: 8px;
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   transition: background 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
 }
@@ -4444,7 +4446,7 @@ body.send-preset-restoring #preset-send-module.hidden {
 }
 
 .module-card {
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.08);
   padding: 5px;
@@ -4553,7 +4555,7 @@ body.theme-dark .module-card {
   height: 22px;
   min-width: 36px;
   padding: 2px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border-strong);
   background: rgba(255,255,255,0.18);
   display: flex;
@@ -4569,7 +4571,7 @@ body.theme-dark .module-switch {
   content: "";
   width: 16px;
   height: 16px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(137, 148, 160, 0.92);
   transition: transform 0.16s ease, background 0.16s ease;
 }
@@ -4608,7 +4610,7 @@ body.theme-dark .module-switch {
 .queue-item,
 .rule-item {
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 4px;
   display: grid;
   gap: 3px;
@@ -4632,7 +4634,7 @@ body.theme-dark .module-switch {
 .rule-inline-row .compact-input,
 .preset-inline-row .compact-input {
   min-height: 26px;
-  border-radius: 8px;
+  border-radius: var(--radius-xs);
   font-size: 12px;
 }
 .preset-inline-row [data-preset-shortcut] {
@@ -4646,7 +4648,7 @@ body.theme-dark .module-switch {
 .compact-input {
   min-height: 26px;
   width: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--border-strong);
   font-size: 12px;
   padding: 4px 6px;
@@ -4670,7 +4672,7 @@ body.theme-dark .module-switch {
 .custom-select.compact .custom-select-trigger {
   min-height: 26px;
   width: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--border-strong);
   background-color: var(--bg-panel-strong);
   padding: 0 6px;
@@ -4725,7 +4727,7 @@ body.theme-dark .module-switch {
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--text-soft);
   font-size: 15px;
@@ -4782,7 +4784,7 @@ body.reorder-drag-active .reorder-drag-handle {
   min-height: 26px;
   padding: 0;
   font-size: 11px;
-  border-radius: 8px;
+  border-radius: var(--radius-xs);
 }
 
 .queue-item .compact-input,
@@ -4842,7 +4844,7 @@ body.reorder-drag-active .reorder-drag-handle {
   min-width: 260px;
   max-width: 360px;
   padding: 12px 14px;
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-strong);
   background: var(--bg-panel-strong);
   box-shadow: var(--shadow);
@@ -4881,7 +4883,7 @@ body.reorder-drag-active .reorder-drag-handle {
 .toast-action-btn {
   min-height: 30px;
   padding: 0 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.08);
   color: var(--text);
@@ -4911,7 +4913,7 @@ body.reorder-drag-active .reorder-drag-handle {
   width: 20px;
   height: 20px;
   min-width: 20px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   display: inline-grid;
   place-items: center;
   border: 1px solid var(--border);
@@ -4948,7 +4950,7 @@ body.reorder-drag-active .reorder-drag-handle {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border-strong);
   background: var(--bg-panel-strong);
   box-shadow: var(--shadow);
@@ -4984,7 +4986,7 @@ body.reorder-drag-active .reorder-drag-handle {
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--text);
   cursor: pointer;
@@ -5067,7 +5069,7 @@ body.theme-dark .version-upstream-box a {
   display: none;
   gap: 6px;
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(86, 114, 205, 0.18);
   background: rgba(86, 114, 205, 0.08);
   font-size: 13px;
@@ -5098,7 +5100,7 @@ body.theme-dark .version-upstream-box a {
   grid-template-columns: auto minmax(0, 1fr);
   gap: 6px 12px;
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(86, 114, 205, 0.18);
   background: rgba(86, 114, 205, 0.05);
   font-size: 13px;
@@ -5510,7 +5512,7 @@ body.compact-single.layout-expanded .device-meta-stack {
   flex: 1 1 auto;
   min-height: 0;
   padding: 8px 4px 8px 10px;
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--bg-terminal);
   box-shadow: inset 0 6px 18px rgba(0, 0, 0, 0.06);
@@ -5523,7 +5525,7 @@ body.compact-single.layout-expanded .device-meta-stack {
 
 .term-output .xterm-viewport,
 .term-output .xterm-screen {
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
 }
 
 .term-toolbar-controls {
@@ -5542,7 +5544,7 @@ body.compact-single.layout-expanded .device-meta-stack {
   gap: 5px;
   padding: 0 9px;
   min-height: 30px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-panel);
   color: var(--text-soft);
@@ -5585,7 +5587,7 @@ body.compact-single.layout-expanded .device-meta-stack {
   min-width: 46px;
   padding: 1px 2px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   background: var(--bg-panel-strong);
   color: var(--text);
   font-size: 12px;
