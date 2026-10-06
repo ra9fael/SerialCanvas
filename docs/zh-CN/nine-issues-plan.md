@@ -72,9 +72,9 @@ else if (value === 'round') refs.cornerGroup.classList.add('pos-dark');
 
 ---
 
-## B 组 —— 设计错位
+## B 组 —— 设计错位（B1 已完成，`fb8ab3a`）
 
-### B1. 参数归属（问题 4）
+### B1. 参数归属（问题 4）—— 已完成于 `fb8ab3a`
 
 **同意，这是九项中最实质的一项。** 左栏叫"设备连接管理"，却塞了这些：
 
@@ -282,7 +282,7 @@ picotty 真正有用的细节是**可打印字符的 40 ms 冲刷防抖**（`app
 
 1. ~~**A1** 终端文字~~ —— **完成**，`6d9a61a`。手动模式 15.58 / 7.97。
 2. ~~**A2** 圆角指示器~~ —— **完成**，`6d9a61a`。指示器位于 0 / 72.6 / 145.3 px。
-3. **B1** 参数归属 —— 最大的结构改动，并解锁 B3。
+3. ~~**B1** 参数归属~~ —— **完成**，`fb8ab3a`。解锁 B3。
 4. **B2** 字号尺度 + 预设。
 5. **C3** 协议模拟 —— 固定内置脚本，价值最高。
 6. **C1** 快捷键条 + 粘贴防抖。
@@ -296,19 +296,42 @@ picotty 真正有用的细节是**可打印字符的 40 ms 冲刷防抖**（`app
 | --- | --- |
 | 缓冲尺寸 | **在实测允许的范围内尽量大。** 实时缓冲默认 8K → **256K**，上限 512K（帧预算）。xterm scrollback 5 000 → **20 000**，最大 100 000。数字来自 `audit/measure-buffer.mjs` 实测，非猜测。 |
 | 字号预设 | **两者都留。** 预设`<select>` 加一个"自定义"选项来显示现有数字输入框，自由输入不丢。 |
-| `newline-mode` | **两个控件。** 一个给手动模式（`#newline-mode`，id 不变），一个给 tty/终端（`#term-newline`）。两条读取路径本来就分开——`normalizeSendOptions()` 对 `getTermLineEnding()`——所以拆分很干净。 |
+| `newline-mode` | **两个控件 —— 本来就是。** `#newline-mode` 服务手动模式，`#term-newline` 服务 tty/终端。见下方更正：它们从未共用过。 |
 | 模拟 | **固定内置脚本。** 本轮不做用户可编辑的协议输入框。 |
 | 布局 | **B1 之后。** 现在做等于做两遍。 |
 
-### 关于 B1 与两个换行控件
+### 更正：两个换行控件本来就是分开的
 
-拆分比看上去容易，因为两个消费者本来就分离：`normalizeSendOptions()`
-（`app.core.js:967`）为手动 TX 读 `state.settings.newlineMode`，而
-`getTermLineEnding()`（`app.terminal.js:232`）为终端直接读 DOM 元素。所以：
+本方案原先声称它们共用一个元素，拆分会"修掉一个潜在怪异"。**那是错的**，
+在实现 B1 时发现：
 
-- 手动模式保留 `#newline-mode` 与现有状态键。
-- 终端新增 `#term-newline`，绑定新的 `state.ui.termNewline`，持久化在 `layout` 里
-  `terminalSkin` 旁边，默认 `rn`。
+- `#term-newline` 早已存在于 `index.html:434`，在 `#term-toolbar-controls` 里。
+- 它早已被绑定（`app.core.js:236`），早已持久化
+  （`layout.terminalNewline`，`app.main.js:6320`）。
+- `getTermLineEnding()`（`app.terminal.js:235`）读 `refs.termNewline`；
+  `normalizeSendOptions()` 读 `state.settings.newlineMode`，后者来自
+  `#newline-mode`（`app.core.js:1481`）。
 
-这同时修掉一个潜在怪异：**目前两个界面读同一个元素**，所以为手动模式改换行符会静默地
-连终端的也一起改了。
+所以既没有什么可拆，也没有潜在 bug。B1 只是把 `#newline-mode` 搬到了手动工具栏。
+搬移后已实测两者独立：`settings.newlineMode = n` 而 `layout.terminalNewline = r`，
+两个 DOM 输入框各保持自己的值。
+
+教训与 A1 相同：**断言缺陷前先读代码。** 本方案没有 grep 第二个元素就断言共用，
+而这个说法因为"听起来合理"躲过了评审。
+
+### B1 的实际交付（`fb8ab3a`）
+
+编码、换行、HEX 收发、时间戳、结尾补换行从连接栏移到监视器面板内的
+`#manual-toolbar-controls`，仅在手动视图显示。纯标记改动：所有控件都通过 `refs`
+访问，`state.settings` 键名未变。
+
+左栏现在只放物理层控件。两处值得记住：
+
+- 既有隐藏规则 `.monitor-panel:not(.view-terminal) .term-toolbar-controls`
+  必须收窄到 `#term-toolbar-controls`。它也匹配了新的手动工具栏，导致手动视图被清空。
+- `.monitor-toolbar` 是 `nowrap`，而六个控件加上模式切换在 1440px 放不下——最后一个
+  会换行并让整行显得参差。通过缩短标签、收紧间距解决，低于 1240px 时文字标签隐藏而
+  勾选项标签保留（裸勾选框无法辨认）。
+
+`#advanced-panel` 整个删除：`setAdvancedPanel()` 只移除一个没人设置的 `hidden` 类，
+其 `refs` 条目会对 null 抛错。

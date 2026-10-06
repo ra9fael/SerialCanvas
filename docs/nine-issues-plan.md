@@ -77,9 +77,9 @@ adding CSS. Slightly ugly, but it is the existing vocabulary.
 
 ---
 
-## Group B — design misplacement
+## Group B — design misplacement (B1 DONE, `fb8ab3a`)
 
-### B1. Parameter ownership (issue 4)
+### B1. Parameter ownership (issue 4) — DONE in `fb8ab3a`
 
 **Agreed, and this is the most substantive of the nine.** The left rail is
 "device connection management", but these live in it:
@@ -318,7 +318,7 @@ duplicates an existing feature or does not apply to a single-port tool.
 
 1. ~~**A1** terminal text~~ — **done**, `6d9a61a`. Manual 15.58 / 7.97.
 2. ~~**A2** corner indicator~~ — **done**, `6d9a61a`. Indicator at 0 / 72.6 / 145.3 px.
-3. **B1** parameter ownership — the largest structural change, and it unblocks B3.
+3. ~~**B1** parameter ownership~~ — **done**, `fb8ab3a`. Unblocks B3.
 4. **B2** size scale + presets.
 5. **C3** simulation — fixed built-in scripts, highest value.
 6. **C1** shortcut bar + paste debounce.
@@ -332,21 +332,48 @@ duplicates an existing feature or does not apply to a single-port tool.
 | --- | --- |
 | Buffer sizing | **As large as measurement allows.** Live buffer default 8 K → **256 K**, ceiling 512 K (frame budget). xterm scrollback 5 000 → **20 000**, up to 100 000. Numbers derived from `audit/measure-buffer.mjs`, not guessed. |
 | Size presets | **Keep both.** A preset `<select>` plus a trailing "自定义" option that reveals the existing number input, so free entry is not lost. |
-| `newline-mode` | **Two controls.** One for manual mode (`#newline-mode`, unchanged id), one for the tty/terminal (`#term-newline`). They are read by different code paths already — `normalizeSendOptions()` vs `getTermLineEnding()` — so splitting is clean. |
+| `newline-mode` | **Two controls — already the case.** `#newline-mode` serves manual mode, `#term-newline` serves the tty/terminal. See the correction below: they were never shared. |
 | Simulation | **Fixed built-in scripts.** No user-editable protocol field in this pass. |
 | Layout | **After B1.** Designing now means designing twice. |
 
-### Note on B1 and the two newline controls
+### Correction: the two newline controls were already separate
 
-Splitting is easier than it looks, because the two consumers are already
-separate: `normalizeSendOptions()` (`app.core.js:967`) reads `state.settings.newlineMode`
-for manual TX, while `getTermLineEnding()` (`app.terminal.js:232`) reads the DOM
-element directly for the terminal. So:
+This plan originally claimed they shared one element and that splitting would
+"fix a latent oddity". **That was wrong**, found while implementing B1:
 
-- Manual keeps `#newline-mode` and its existing state key.
-- Terminal gets a new `#term-newline` bound to a new `state.ui.termNewline`,
-  persisted in `layout` next to `terminalSkin`, defaulting to `rn`.
+- `#term-newline` already existed at `index.html:434`, inside
+  `#term-toolbar-controls`.
+- It was already bound (`app.core.js:236`) and already persisted
+  (`layout.terminalNewline`, `app.main.js:6320`).
+- `getTermLineEnding()` (`app.terminal.js:235`) reads `refs.termNewline`;
+  `normalizeSendOptions()` reads `state.settings.newlineMode`, set from
+  `#newline-mode` (`app.core.js:1481`).
 
-That also fixes a latent oddity: today both surfaces read one element, so
-changing the setting for manual mode silently changed the terminal's line ending
-too.
+So there was nothing to split and no latent bug. B1 only moved
+`#newline-mode` to the manual toolbar. Verified independent at runtime after the
+move: `settings.newlineMode = n` with `layout.terminalNewline = r`, and the DOM
+inputs keep their own values.
+
+The lesson is the one from A1: **read the code before asserting a defect.** The
+plan asserted a shared element without grepping for a second one, and the claim
+survived review because it was plausible.
+
+### B1 as delivered (`fb8ab3a`)
+
+Encoding, newline, hex RX/TX, timestamps and append-line-ending moved from the
+connection rail to `#manual-toolbar-controls` inside the monitor panel, shown
+only in manual view. Pure markup: every control is reached through `refs`, and
+`state.settings` keys are untouched.
+
+The left rail now holds only physical-layer controls. Two details worth keeping:
+
+- The existing hide rule `.monitor-panel:not(.view-terminal)
+  .term-toolbar-controls` had to be rescoped to `#term-toolbar-controls`. It
+  matched the new manual toolbar as well and blanked manual view.
+- `.monitor-toolbar` is `nowrap`, and six controls plus the mode switch do not
+  fit at 1440px — the last one wrapped and left the row ragged. Fixed by
+  shortening labels and tightening spacing, with text labels dropping below
+  1240px while checkbox labels stay (a bare checkbox would be unreadable).
+
+`#advanced-panel` was removed entirely: `setAdvancedPanel()` only removed a
+`hidden` class nothing sets, and its `refs` entry would have thrown on the null.
