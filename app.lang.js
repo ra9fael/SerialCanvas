@@ -40,6 +40,7 @@
     '工具手册': 'Manual',
     '查看工具手册': 'View the manual',
     '问题反馈': 'Feedback',
+    '了解更多': 'Learn more',
     '提交问题反馈': 'Send feedback',
     '查看 github 项目': 'View the GitHub project',
     '源码仓库': 'Source code',

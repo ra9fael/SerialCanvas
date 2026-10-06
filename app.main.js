@@ -8339,6 +8339,7 @@
 
   initializeDefaults();
   attachEventListeners();
+  installTooltip();
   trackSerialWebView();
   tryInitialSerialConnectPrompt();
 })();

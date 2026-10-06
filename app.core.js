@@ -1796,6 +1796,195 @@
     }
   }
 
+  /* ---- Tooltip singleton -------------------------------------------------
+     One box on <body>, driven by delegation, replacing both the native title
+     tooltip and the per-element CSS bubble. It exists because neither of those
+     can host a link, and because a native tooltip cannot be styled at all.
+
+     Elements opt in with data-tip="..." (preferred) or title="...". A tip that
+     starts with "docs:" also renders a "Learn more" link, using the value as a
+     key into the doc set - the same trick the reference dashboard uses.
+
+     Built with createElement/textContent throughout, never innerHTML: tip text
+     comes from attributes, and there is no reason to hand the parser any of it. */
+  const TOOLTIP_HIDE_DELAY_MS = 180;
+  let tooltipEl = null;
+  let tooltipArrow = null;
+  let tooltipHideTimer = 0;
+  let tooltipAnchor = null;
+
+  function ensureTooltipEl() {
+    if (tooltipEl) return tooltipEl;
+    tooltipEl = document.createElement('div');
+    tooltipEl.className = 'sw-tooltip';
+    tooltipEl.setAttribute('role', 'tooltip');
+    tooltipEl.hidden = true;
+    tooltipArrow = document.createElement('div');
+    tooltipArrow.className = 'sw-tooltip-arrow';
+    tooltipEl.appendChild(tooltipArrow);
+    const body = document.createElement('div');
+    body.className = 'sw-tooltip-body';
+    tooltipEl.appendChild(body);
+    document.body.appendChild(tooltipEl);
+    return tooltipEl;
+  }
+
+  function tooltipTextFor(target) {
+    const tip = target.getAttribute('data-tip');
+    if (tip) return tip;
+    // While a tip is showing the trigger carries no title; the backup is the
+    // only place the text still lives.
+    return target.getAttribute('title') || target.getAttribute('data-tip-swapped-title') || '';
+  }
+
+  function positionTooltip(target) {
+    const box = ensureTooltipEl();
+    const rect = target.getBoundingClientRect();
+    const margin = 8;
+    // Measure after content is set, then place: below by default, flipped above
+    // when there is no room, clamped horizontally to the viewport.
+    box.hidden = false;
+    const size = box.getBoundingClientRect();
+    let top = rect.bottom + margin;
+    let flipped = false;
+    if (top + size.height > window.innerHeight - margin && rect.top - margin - size.height > 0) {
+      top = rect.top - margin - size.height;
+      flipped = true;
+    }
+    let left = rect.left + rect.width / 2 - size.width / 2;
+    left = Math.min(Math.max(margin, left), window.innerWidth - size.width - margin);
+    box.style.left = Math.round(left) + 'px';
+    box.style.top = Math.round(top) + 'px';
+    box.classList.toggle('is-flipped', flipped);
+    const arrow = tooltipArrow;
+    if (arrow) {
+      // Keep the arrow on the trigger, clamped inside the box.
+      const center = rect.left + rect.width / 2 - left;
+      arrow.style.left = Math.round(Math.min(Math.max(14, center), size.width - 14)) + 'px';
+      arrow.classList.toggle('is-top', flipped);
+    }
+  }
+
+  function showTooltip(target) {
+    if (!target) return false;
+    const text = tooltipTextFor(target);
+    if (!text) return false;
+    const box = ensureTooltipEl();
+    const body = box.querySelector('.sw-tooltip-body');
+    body.textContent = '';
+    const lines = text.split('\n');
+    const main = document.createElement('div');
+    main.className = 'sw-tooltip-text';
+    main.textContent = lines.join('\n');
+    body.appendChild(main);
+    const docs = target.getAttribute('data-tip-docs');
+    if (docs) {
+      const foot = document.createElement('a');
+      foot.className = 'sw-tooltip-link';
+      foot.href = docs;
+      foot.target = '_blank';
+      foot.rel = 'noopener noreferrer';
+      foot.textContent = t('了解更多');
+      body.appendChild(foot);
+    }
+    tooltipAnchor = target;
+    positionTooltip(target);
+    return true;
+  }
+
+  function hideTooltip() {
+    if (tooltipHideTimer) {
+      clearTimeout(tooltipHideTimer);
+      tooltipHideTimer = 0;
+    }
+    if (tooltipEl) tooltipEl.hidden = true;
+    tooltipAnchor = null;
+  }
+
+  function scheduleTooltipHide() {
+    if (tooltipHideTimer) clearTimeout(tooltipHideTimer);
+    tooltipHideTimer = window.setTimeout(hideTooltip, TOOLTIP_HIDE_DELAY_MS);
+  }
+
+  function cancelTooltipHide() {
+    if (tooltipHideTimer) {
+      clearTimeout(tooltipHideTimer);
+      tooltipHideTimer = 0;
+    }
+  }
+
+  /* The trigger must ignore its own title, otherwise the native tooltip shows
+     on top of this one a moment later. Restored on hide so the attribute is
+     still available for anything reading it. */
+  function installTooltip() {
+    ensureTooltipEl();
+    const suppressTitle = (target) => {
+      const pending = target.getAttribute('data-tip-swapped-title');
+      // A previous hover may have removed the title without restoring it (an
+      // element removed mid-hover, a cancelled mouseout). Keep the first backup
+      // rather than overwriting it with nothing.
+      if (!pending) {
+        const title = target.getAttribute('title');
+        if (title) target.setAttribute('data-tip-swapped-title', title);
+      }
+      target.removeAttribute('title');
+    };
+    const restoreTitle = (target) => {
+      const title = target.getAttribute('data-tip-swapped-title');
+      if (title) {
+        target.setAttribute('title', title);
+        target.removeAttribute('data-tip-swapped-title');
+      }
+    };
+    /* The selector must include the backup attribute: while a tip is showing, the
+       trigger has no title, so matching on [title] alone would stop finding it
+       on the next hover. */
+    const resolve = (event) => {
+      const target = event.target;
+      if (!target || typeof target.closest !== 'function') return null;
+      return target.closest('[data-tip],[title],[data-tip-swapped-title]');
+    };
+    document.addEventListener('mouseover', (event) => {
+      const target = resolve(event);
+      if (!target || target === tooltipAnchor) return;
+      if (target.closest('.sw-tooltip')) return;
+      cancelTooltipHide();
+      // Render BEFORE suppressing the title: suppressTitle() removes the
+      // attribute the text was just read from, so doing it first would leave
+      // the element permanently without a tooltip when showTooltip declines.
+      if (showTooltip(target)) suppressTitle(target);
+    });
+    document.addEventListener('mouseout', (event) => {
+      const target = resolve(event);
+      if (!target || target !== tooltipAnchor) return;
+      // Moving onto the tooltip itself must not dismiss it - the link needs to
+      // be clickable.
+      const to = event.relatedTarget;
+      if (to && typeof to.closest === 'function' && to.closest('.sw-tooltip')) return;
+      restoreTitle(target);
+      scheduleTooltipHide();
+    });
+    document.addEventListener('focusin', (event) => {
+      const target = resolve(event);
+      if (!target) return;
+      cancelTooltipHide();
+      if (showTooltip(target)) suppressTitle(target);
+    });
+    document.addEventListener('focusout', (event) => {
+      const target = resolve(event);
+      if (!target || target !== tooltipAnchor) return;
+      restoreTitle(target);
+      hideTooltip();
+    });
+    tooltipEl.addEventListener('mouseenter', cancelTooltipHide);
+    tooltipEl.addEventListener('mouseleave', hideTooltip);
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') hideTooltip();
+    });
+    window.addEventListener('scroll', hideTooltip, true);
+    window.addEventListener('resize', hideTooltip);
+  }
+
   function translateDom(root = document.body) {
     if (!root || !root.ownerDocument) return;
     const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {

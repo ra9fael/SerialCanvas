@@ -299,7 +299,7 @@
           <section id="text-parser-pane" class="parser-config-card">
             <div class="parser-card-head">
               <div class="panel-title">文本解析配置
-                <span class="help-icon" data-tip="如何编写解析规则：&#10;&#10;三种标记（必须 / 开头 + 数字序号）：&#10;/nameN → 匹配文本，用作键名&#10;/intN  → 匹配整数&#10;/floatN → 匹配小数&#10;&#10;标记之间可放任意分隔符&#10;分隔符按原样匹配输入数据&#10;&#10;例 1：/name0=/int0 /name1=/float1&#10;可解析：温度=42 湿度=3.14&#10;结果→ 温度:42, 湿度:3.14&#10;&#10;例 2：/name0:/int0,/name1=/float1&#10;可解析：温度:42,湿度=3.14&#10;&#10;例 3（动态键名）：/name0=/int0&#10;同一规则可解析不同输入：&#10; 传感器A=25 → 传感器A:25&#10; 传感器B=30 → 传感器B:30&#10;name 会自动将捕获的文本&#10;作为该条数据的键名">?</span>
+                <span class="help-icon" data-tip-docs="docs/parser.md#text-rules" data-tip="如何编写解析规则：&#10;&#10;三种标记（必须 / 开头 + 数字序号）：&#10;/nameN → 匹配文本，用作键名&#10;/intN  → 匹配整数&#10;/floatN → 匹配小数&#10;&#10;标记之间可放任意分隔符&#10;分隔符按原样匹配输入数据&#10;&#10;例 1：/name0=/int0 /name1=/float1&#10;可解析：温度=42 湿度=3.14&#10;结果→ 温度:42, 湿度:3.14&#10;&#10;例 2：/name0:/int0,/name1=/float1&#10;可解析：温度:42,湿度=3.14&#10;&#10;例 3（动态键名）：/name0=/int0&#10;同一规则可解析不同输入：&#10; 传感器A=25 → 传感器A:25&#10; 传感器B=30 → 传感器B:30&#10;name 会自动将捕获的文本&#10;作为该条数据的键名">?</span>
               </div>
               <button id="apply-recommended-rule-btn" class="auto-detect-btn" type="button">自动识别：不可用</button>
             </div>
@@ -318,7 +318,7 @@
             <div class="parser-card-head">
               <div>
                 <div class="panel-title">十六进制结构表
-                  <span class="help-icon" data-tip="行类型（按表格下拉顺序）：&#10;• 帧头 — 帧起始标识，16进制&#10;  留空则跳过&#10;• 帧尾 — 帧结束标识，16进制&#10;  留空则不检查帧尾&#10;• 数据 — 数值数据，需选择&#10;  数据类型 + 填写标签名&#10;• 校验和 — 自动计算 SUM8&#10;  仅覆盖 data 行的字节&#10;• 间隔符 — 留空占位 1 字节&#10;  填入则匹配指定16进制&#10;&#10;数值大小端说明：&#10;LE = Little Endian（低位在前）&#10;BE = Big Endian（高位在前）&#10;&#10;可用数据类型：&#10;UInt8 / Int8&#10;UInt16 LE/BE / Int16 LE/BE&#10;UInt32 LE/BE / Int32 LE/BE&#10;Float32 LE/BE / Bool(8bit)">?</span>
+                  <span class="help-icon" data-tip-docs="docs/parser.md#hex-binary-frames" data-tip="行类型（按表格下拉顺序）：&#10;• 帧头 — 帧起始标识，16进制&#10;  留空则跳过&#10;• 帧尾 — 帧结束标识，16进制&#10;  留空则不检查帧尾&#10;• 数据 — 数值数据，需选择&#10;  数据类型 + 填写标签名&#10;• 校验和 — 自动计算 SUM8&#10;  仅覆盖 data 行的字节&#10;• 间隔符 — 留空占位 1 字节&#10;  填入则匹配指定16进制&#10;&#10;数值大小端说明：&#10;LE = Little Endian（低位在前）&#10;BE = Big Endian（高位在前）&#10;&#10;可用数据类型：&#10;UInt8 / Int8&#10;UInt16 LE/BE / Int16 LE/BE&#10;UInt32 LE/BE / Int32 LE/BE&#10;Float32 LE/BE / Bool(8bit)">?</span>
                 </div>
               </div>
               <button id="add-binary-row-btn" class="secondary-btn">新增一行</button>
