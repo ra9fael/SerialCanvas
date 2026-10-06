@@ -275,50 +275,6 @@
             </div>
           </div>
 
-          <div id="advanced-panel" class="advanced-grid">
-            <div class="field">
-              <label for="text-encoding">字符编码</label>
-              <select id="text-encoding">
-                <option value="utf-8">UTF-8</option>
-                <option value="ascii">ASCII</option>
-                <option value="latin1">Latin-1</option>
-                <option value="utf-16le">UTF-16LE</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="newline-mode">换行符设置</label>
-              <select id="newline-mode">
-                <option value="r">\r</option>
-                <option value="n">\n</option>
-                <option value="rn">\r\n</option>
-              </select>
-            </div>
-            <label class="toggle-row">
-              <div>
-                <div class="mini-label">十六进制接收</div>
-              </div>
-              <input id="rx-display-mode" type="checkbox">
-            </label>
-            <label class="toggle-row">
-              <div>
-                <div class="mini-label">十六进制发送</div>
-              </div>
-              <input id="send-mode" type="checkbox">
-            </label>
-            <label class="toggle-row">
-              <div>
-                <div class="mini-label">显示时间</div>
-              </div>
-              <input id="append-timestamp" type="checkbox" checked>
-            </label>
-            <label class="toggle-row">
-              <div>
-                <div class="mini-label">结尾补换行符</div>
-              </div>
-              <input id="append-newline" type="checkbox" checked>
-            </label>
-          </div>
-
           <div class="layout-toggle-strip">
             <button id="layout-toggle-btn" class="layout-toggle-btn" title="图形解析模式">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -427,6 +383,41 @@
             <div id="monitor-view-switch" class="mode-tabs mode-switch-group monitor-view-switch" role="tablist" aria-label="监视视图切换">
               <button class="mode-tab active" data-monitor-view="manual" type="button">手动收发</button>
               <button class="mode-tab" data-monitor-view="terminal" type="button">终端</button>
+            </div>
+            <div id="manual-toolbar-controls" class="term-toolbar-controls">
+              <label class="term-field" title="收发使用的字符编码">
+                <span>编码</span>
+                <select id="text-encoding">
+                  <option value="utf-8">UTF-8</option>
+                  <option value="ascii">ASCII</option>
+                  <option value="latin1">Latin-1</option>
+                  <option value="utf-16le">UTF-16LE</option>
+                </select>
+              </label>
+              <label class="term-field" title="手动发送时追加的行结束符（与终端的换行设置相互独立）">
+                <span>换行</span>
+                <select id="newline-mode">
+                  <option value="r">\r</option>
+                  <option value="n">\n</option>
+                  <option value="rn" selected>\r\n</option>
+                </select>
+              </label>
+              <label class="term-field term-toggle" title="以十六进制显示收到的数据">
+                <input id="rx-display-mode" type="checkbox">
+                <span>HEX 接收</span>
+              </label>
+              <label class="term-field term-toggle" title="以十六进制发送输入内容">
+                <input id="send-mode" type="checkbox">
+                <span>HEX 发送</span>
+              </label>
+              <label class="term-field term-toggle" title="在每行日志前显示时间戳">
+                <input id="append-timestamp" type="checkbox" checked>
+                <span>时间戳</span>
+              </label>
+              <label class="term-field term-toggle" title="发送内容末尾自动补换行符">
+                <input id="append-newline" type="checkbox" checked>
+                <span>补换行</span>
+              </label>
             </div>
             <div id="term-toolbar-controls" class="term-toolbar-controls">
               <label class="term-field" title="发送时追加的行结束符">

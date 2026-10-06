@@ -185,7 +185,6 @@
     signalDsrValue: document.getElementById('signal-dsr-value'),
     signalDcdValue: document.getElementById('signal-dcd-value'),
     signalRiValue: document.getElementById('signal-ri-value'),
-    advancedPanel: document.getElementById('advanced-panel'),
     rxDisplayMode: document.getElementById('rx-display-mode'),
     textEncoding: document.getElementById('text-encoding'),
     appendTimestamp: document.getElementById('append-timestamp'),
@@ -2169,10 +2168,6 @@
       refreshParserResultsExpansionAvailability();
       refitTerminal();
     });
-  }
-
-  function setAdvancedPanel() {
-    refs.advancedPanel.classList.remove('hidden');
   }
 
   function updateParserModeUI() {

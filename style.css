@@ -5583,8 +5583,53 @@ body.compact-single.layout-expanded .device-meta-stack {
 }
 /* ===== Terminal interaction mode (manual send/receive vs terminal tab switch, xterm.js) ===== */
 
-.monitor-panel:not(.view-terminal) .term-toolbar-controls {
+/* Terminal-only toolbar. Scoped by id because #manual-toolbar-controls carries
+   the same class and must stay visible in manual view. */
+.monitor-panel:not(.view-terminal) #term-toolbar-controls {
   display: none;
+}
+
+/* Manual-mode parameters live in a parallel toolbar, shown only in manual view.
+   The terminal keeps its own newline control: #newline-mode and #term-newline
+   are separate settings with separate consumers.
+
+   The labels are deliberately short. Six controls plus the mode switch and the
+   title do not fit on one row at 1440px, and the toolbar does not wrap
+   (.monitor-toolbar is nowrap), so a long label pushes the last control onto a
+   second line and leaves the row ragged. */
+.monitor-panel.view-terminal #manual-toolbar-controls {
+  display: none;
+}
+
+#manual-toolbar-controls {
+  flex-wrap: nowrap;
+  min-width: 0;
+  gap: 4px;
+}
+
+/* When the row runs out of room the controls compress rather than wrap:
+   .monitor-toolbar is nowrap, so a wrapped control would leave the row ragged
+   and push the title/meta out of alignment. Labels shorten before padding does. */
+#manual-toolbar-controls .term-field {
+  padding: 0 7px;
+  gap: 4px;
+}
+
+#manual-toolbar-controls .term-field > span {
+  font-size: 11px;
+}
+
+#manual-toolbar-controls .term-field select {
+  max-width: 76px;
+}
+
+@media (max-width: 1240px) {
+  #manual-toolbar-controls .term-field > span {
+    display: none;
+  }
+  #manual-toolbar-controls .term-field:has(input[type="checkbox"]) > span {
+    display: inline;
+  }
 }
 
 #term-interaction {
@@ -5652,6 +5697,17 @@ body.compact-single.layout-expanded .device-meta-stack {
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
+}
+
+/* Checkbox variant: the box precedes its label, matching #term-local-echo. */
+.term-field.term-toggle input[type="checkbox"] {
+  margin: 0;
+  flex: none;
+}
+
+.term-field.term-toggle:has(input:checked) {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .term-field select {

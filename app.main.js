@@ -6178,7 +6178,6 @@
     applyTheme();
     applyLayout(false);
     applyMonitorView();
-    setAdvancedPanel();
     updateSignalControlsUI();
     updateParserModeUI();
     renderExtensionButtons();
@@ -8005,7 +8004,6 @@
     applyTheme();
     applyCornerRadius();
     applyLayout(false);
-    setAdvancedPanel();
     updateParserModeUI();
     updateSignalControlsUI();
     syncSendInputModeUI();
@@ -8076,7 +8074,6 @@
     applyTheme();
     applyCornerRadius();
     applyLayout(false);
-    setAdvancedPanel();
     updateSignalControlsUI();
     updateParserModeUI();
     renderExtensionButtons();
