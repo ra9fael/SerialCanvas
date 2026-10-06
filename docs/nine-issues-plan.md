@@ -113,36 +113,54 @@ right value differs — a getty wants `\r\n`, a serial device usually wants `\n`
 change. The persistence and the config export/import paths need no change
 because they snapshot `state.settings`, not the DOM.
 
-### B2. Unify type scale and add size presets (issue 2)
+### B2. Unify type scale and add size presets (issue 2) — DONE in `ad3eade`
 
-**Confirmed inconsistent.** Three independent sizes exist:
+**Confirmed inconsistent.** Three sizes existed:
 
 | Where | Size | Source |
 | --- | --- | --- |
 | xterm terminal | `refs.termFontSize`, 8–48 | `<input type="number">`, line 459 |
 | `.terminal` (manual log) | `12px` hardcoded | line 4038 |
-| `.insight-pre` | `12px` hardcoded | line 3428 |
+| `.parser-result-card span` | `15px` hardcoded | line 3232 |
 
-There is no shared scale token, and the size control is a free-text number box
-rather than a preset list.
+**Correction to this plan's original text:** it listed `.insight-pre` as the third
+site. That was wrong — `.insight-pre` had three CSS rules but **no element in
+`index.html` and no reference in either JS file.** It is dead CSS, and A1 had
+added a `color` rule to it. The real parse container is `#parser-preview` /
+`.parser-result-grid`, whose *value* span is what uses monospace at 15px. The
+orphan rules have been deleted.
 
-**Fix.**
+**Delivered.** Two tokens, one control:
 
-1. Add a size scale that both the terminal and the log read:
-   `--mono-size: 12px` (terminal default), `--log-size: 12px`. Keep them as
-   separate tokens — a user who enlarges the terminal for a device session
-   generally does not want the parsed-results panel to grow.
-2. Replace the number input with a `<select>` of presets: 10 / 11 / 12 / 14 / 16 /
-   18 / 20 px. Custom sizes were possible before; a pure `<select>` removes
-   that. **Recommend keeping the presets but adding a trailing "自定义" option**
-   that reveals the number input, so nothing is lost.
-3. Apply the chosen size to `.terminal` and `.insight-pre` too, so all three
-   surfaces track one setting.
+| Token | Drives |
+| --- | --- |
+| `--mono-size` | xterm, via `options.fontSize` |
+| `--log-size` | the manual log and the parse-result values (+3px, keeping the old 15px relationship) |
 
-`getTerminalFontSize()` (`app.terminal.js:98`) clamps 8–48; keep that range for
-the custom path.
+They stay separate on purpose — enlarging the terminal is for reading a device
+session, the parse panel is a different surface with a different amount of text.
+Both default to 12px.
 
-### B3. Layout redesign (issue 9) — blocked by B1
+The control moved **out of** `#term-toolbar-controls` into its own container
+between the view switch and the two parameter toolbars, because it governs both
+views while living in the terminal-only toolbar.
+
+Presets are 10/11/12/14/16/18/20 plus `自定义`, which reveals the number input.
+`setTerminalFontSize()` keeps them in sync both ways: a non-preset value flips
+the select to `自定义` and reveals the input, a preset hides it again, and
+Ctrl+wheel routes through the same function — so zooming from a custom value
+snaps the select back to a matching preset. `clampTerminalFontSize()`'s 8–48
+range still applies to the custom path.
+
+Two details worth keeping:
+
+- The preference key is still `terminalFontSize` even though it now drives every
+  surface. Renaming it would discard saved preferences.
+- Restoring a saved size routes through `setTerminalFontSize()` rather than
+  writing the input directly; otherwise the preset select would keep showing its
+  own default after a reload.
+
+### B3. Layout redesign (issue 9) — now unblocked
 
 **Deliberately last.** Once the parameters move out of the left rail, that rail
 holds only ~9 connection controls, and the whole left column shrinks. Designing
@@ -319,12 +337,13 @@ duplicates an existing feature or does not apply to a single-port tool.
 1. ~~**A1** terminal text~~ — **done**, `6d9a61a`. Manual 15.58 / 7.97.
 2. ~~**A2** corner indicator~~ — **done**, `6d9a61a`. Indicator at 0 / 72.6 / 145.3 px.
 3. ~~**B1** parameter ownership~~ — **done**, `fb8ab3a`. Unblocks B3.
-4. **B2** size scale + presets.
+4. ~~**B2** size scale + presets~~ — **done**, `ad3eade`.
 5. **C3** simulation — fixed built-in scripts, highest value.
 6. **C1** shortcut bar + paste debounce.
 7. **C2** export + buffer settings.
 8. **Issue 7 tooltip** singleton.
-9. **B3** layout redesign — **after** the parameters have moved, as agreed.
+9. **B3** layout redesign — now unblocked; the rail is connection-only and the
+   type scale is settled.
 
 ## Decisions taken
 
