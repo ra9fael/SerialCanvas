@@ -219,19 +219,62 @@ the shortcut sheet: a modal listing every binding, opened with `?`. Native
 
 ## Recommended order
 
-Status as of `eeb3b31` / `0eb7118`:
+All five items are now done. Status by commit:
 
-1. ~~**Fix the terminal foreground**~~ — **done**, `eeb3b31`.
-2. ~~**Phase 2 radius tokenisation**~~ — **done** (radius half), `0eb7118`. The
-   shadow / `rgba()` / gradient sweep is still open.
-3. ~~**Ship the corner-radius control**~~ — **done**.
-4. **Layout: the viewport-flex rail** (3a, one line) and the **status-pill
-   relative age** (3a, small). Independent of everything else.
-5. **Shortcut sheet + the chorded shortcuts** (3d, 3e). Largest new surface,
-   lowest urgency.
+| # | Item | Commit |
+| --- | --- | --- |
+| 1 | Fix the terminal foreground | `eeb3b31` |
+| 2 | Phase 2 radius tokenisation (radius half) | `0eb7118` |
+| 3 | Ship the corner-radius control | `61d300c` |
+| 4a | Fluid left rail | `dcde5b3` |
+| 4b | Connection age in the status pill | `78669f3` |
+| 5 | Chorded shortcuts + shortcut sheet | `3272d33` |
 
-Item 5 is deliberately last: shortcuts are the easiest thing to break silently,
-and they are worth most once the layout they navigate is settled.
+### 4a. Fluid left rail — `dcde5b3`
+
+One token, `--rail-w: clamp(248px, 19vw, 320px)`, now drives `.workspace`,
+`.left-column` and the collapsed state, so the three can no longer drift apart.
+The collapsed state overrides the token to `0px` rather than relying on a
+hard-coded column value, which a variable-width column would ignore.
+
+Measured: 1280 → 248px, 1440 → 274px, 1680 → 319px, 1920 → 320px (capped),
+2560 → 320px. The rail's share of the split drops from 20% to 13%.
+
+### 4b. Connection age in the status pill — `78669f3`
+
+`formatRelativeAge()` renders `3s / 12m / 4h / 2d` — deliberately coarser than
+the existing `formatDuration()`, because the pill is a liveness cue rather than
+a stopwatch. **No new timer**: the existing 250 ms clock already runs whenever
+`state.serial.connected` is true, and its `scheduleRefresh` already requests a
+status repaint.
+
+### 5. Shortcuts — `3272d33`
+
+| Key | Action |
+| --- | --- |
+| ``Ctrl-` `` | Collapse / expand the left config rail |
+| `Ctrl-Alt-C` | Cycle corner radius |
+| `?` | Open the shortcut sheet |
+| `Esc` | Close the sheet or an open menu |
+
+Two constraints shaped the implementation:
+
+**No bare letters.** The preset-send handler already claims single keypresses
+on `document`, so a bare-letter binding would silently shadow a user's preset.
+`SHORTCUT_GROUPS` documents that arrangement in the sheet itself.
+
+**Ordering.** The dispatcher is registered *after* the preset handler and
+bails on `event.defaultPrevented`. The preset handler requires
+`!ctrlKey && !altKey`, so it has already declined by the time a chord arrives.
+A handled chord always calls `preventDefault`, or the browser default runs too.
+
+`isTypingTarget()` excludes `INPUT` / `TEXTAREA` / `SELECT` /
+`contentEditable` and the `.xterm` host — in the terminal the keyboard belongs
+to the device on the wire, not to the app.
+
+One fix fell out of this: `renderTranslatedViews()` did not call
+`renderShortcutSheet()`, so switching language with the sheet open left stale
+text.
 
 ### Remaining Phase 2 work
 
