@@ -1,63 +1,121 @@
+/* ============================================================================
+   Design tokens — "Modernist".
+
+   Flat, opaque, square-cornered: structure is drawn with rules and colour
+   blocks rather than shadows and translucency. Values re-derived from the
+   reference dashboard's palette; no stylesheet was copied (see
+   docs/modernist-ui-plan.md §9 for provenance).
+
+   Corner radius is driven by ONE integer, --radius-scale, so the system menu
+   can switch it at runtime:
+     square (0, default) · soft (.5) · round (1)
+   --radius-dot is deliberately NOT multiplied: a circle reads as "state",
+   a square reads as "decoration".
+   ========================================================================== */
+
 :root {
   color-scheme: light;
-  --bg: #ffffff;
-  --bg-elevated: rgba(255, 255, 255, 0.92);
-  --bg-panel: rgba(255, 255, 255, 0.84);
-  --bg-panel-strong: rgba(255, 255, 255, 0.94);
-  --bg-terminal: #f6f6f7;
-  --border: rgba(60, 60, 67, 0.16);
-  --border-strong: rgba(60, 60, 67, 0.24);
-  --text: #3c3c43;
-  --text-soft: #67676c;
-  --accent: #5672cd;
-  --accent-strong: #3451b2;
-  --accent-soft: rgba(100, 108, 255, 0.14);
-  --signal: #3a5ccc;
-  --warning: #d97706;
-  --danger: #e0575e;
-  --shadow: 0 18px 48px rgba(0, 0, 0, 0.10);
-  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.07);
+
+  /* Surfaces — opaque, two warm greys. No translucency, no blur. */
+  --bg: #f3f2f2;
+  --bg-elevated: #f8f4f4;
+  --bg-panel: #eae9e9;
+  --bg-panel-strong: #f8f4f4;
+  --bg-terminal: #1b1918;
+
+  /* Structure. --border is the hairline, --border-strong the emphasis rule. */
+  --border: rgba(32, 30, 29, 0.40);
+  --border-strong: rgba(32, 30, 29, 0.62);
+
+  --text: #201e1d;
+  --text-soft: #605d5d;
+  --text-faint: #9b9797;
+
+  /* Single warm accent, used sparingly. */
+  --accent: #ec3013;
+  --accent-strong: #ae1800;
+  --accent-soft: #ffe0d9;
+  --signal: #c94b39;
+  --warning: #b45309;
+  --danger: #ae1800;
+
+  /* Overlays are the one place a shadow is load-bearing: they must float. */
+  --shadow: 0 12px 32px rgba(32, 30, 29, 0.22);
+  --shadow-soft: 0 3px 10px rgba(32, 30, 29, 0.16);
+  --overlay-backdrop: rgba(45, 43, 43, 0.50);
+  --overlay-blur: none;
+
+  /* Radius — one knob. Phase 2 replaces the hardcoded pixel values with these. */
+  --radius-scale: 0;
+  --radius-xs: calc(2px * var(--radius-scale));
+  --radius-sm: calc(8px * var(--radius-scale));
+  --radius-md: calc(12px * var(--radius-scale));
+  --radius-lg: calc(16px * var(--radius-scale));
+  --radius-pill: calc(999px * var(--radius-scale));
+  --radius-dot: 50%;
+  /* Kept for the existing call sites; both now follow the scale. */
+  --radius: calc(14px * var(--radius-scale));
+  --radius-small: calc(10px * var(--radius-scale));
+
   --grid-gap: 10px;
-  --radius: 14px;
-  --radius-small: 10px;
   --header-height: 52px;
   --compact-float-top: 92px;
-  --overlay-backdrop: rgba(12, 18, 24, 0.46);
-  --overlay-blur: blur(10px);
   --panel-glow: none;
   --timeline-fill: var(--signal);
   --brand-green: rgba(34, 197, 94, 0.14);
-  --scrollbar-thumb: rgba(86, 114, 205, 0.46);
-  --scrollbar-thumb-hover: rgba(52, 81, 178, 0.66);
+  --scrollbar-thumb: rgba(32, 30, 29, 0.34);
+  --scrollbar-thumb-hover: rgba(32, 30, 29, 0.56);
+
+  /* System stack retained: no webfont is downloaded, so the single-file
+     release does not grow and there is no CJK fallback question. */
   --font-ui: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+
+  /* Typographic treatment borrowed from the reference: heavy, tight headings. */
+  --heading-weight: 800;
+  --heading-tracking: -0.015em;
+  --kicker-size: 10px;
+  --kicker-tracking: 0.10em;
 }
 
+/* Corner-radius setting, driven from the system menu. These must sit outside
+   the :root block: a nested selector is only valid with an explicit `&`. */
+:root[data-corner="soft"] { --radius-scale: 0.5; }
+:root[data-corner="round"] { --radius-scale: 1; }
+
+/* Dark: a warm near-black ramp, not a cool one. The accent moves to the 500
+   stop because 600 is too dark to read against a near-black ground. */
 :root.theme-dark,
 body.theme-dark {
   color-scheme: dark;
-  --bg: #1b1b1f;
-  --bg-elevated: rgba(32, 33, 39, 0.92);
-  --bg-panel: rgba(32, 33, 39, 0.86);
-  --bg-panel-strong: rgba(32, 33, 39, 0.96);
-  --bg-terminal: #161618;
-  --border: rgba(60, 63, 68, 0.32);
-  --border-strong: rgba(60, 63, 68, 0.44);
-  --text: #dfdfd6;
-  --text-soft: #98989f;
-  --accent: #818cf8;
-  --accent-strong: #c7d2fe;
-  --accent-soft: rgba(129, 140, 248, 0.16);
-  --signal: #6366f1;
+
+  --bg: #1b1918;
+  --bg-elevated: #26241f;
+  --bg-panel: #232120;
+  --bg-panel-strong: #2d2b28;
+  --bg-terminal: #121110;
+
+  --border: rgba(244, 241, 239, 0.22);
+  --border-strong: rgba(244, 241, 239, 0.38);
+
+  --text: #f4f1ef;
+  --text-soft: #b4aea8;
+  --text-faint: #7d7979;
+
+  --accent: #ff563c;
+  --accent-strong: #ff9783;
+  --accent-soft: #471d16;
+  --signal: #ef6853;
   --warning: #ffb14d;
-  --danger: #f87171;
-  --shadow: 0 24px 54px rgba(0, 0, 0, 0.38);
-  --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.28);
-  --panel-glow: none;
-  --timeline-fill: var(--signal);
-  --brand-green: rgba(34, 197, 94, 0.14);
-  --scrollbar-thumb: rgba(129, 140, 248, 0.48);
-  --scrollbar-thumb-hover: rgba(99, 102, 241, 0.7);
+  --danger: #ff9783;
+
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  --shadow-soft: 0 3px 10px rgba(0, 0, 0, 0.40);
+  --overlay-backdrop: rgba(18, 16, 14, 0.62);
+  --overlay-blur: none;
+
+  --scrollbar-thumb: rgba(244, 241, 239, 0.26);
+  --scrollbar-thumb-hover: rgba(244, 241, 239, 0.44);
 }
 
 * {
