@@ -333,6 +333,8 @@
     textParserPane: document.getElementById('text-parser-pane'),
     binaryParserPane: document.getElementById('binary-parser-pane'),
     parserModeSwitch: document.querySelector('.parser-mode-switch'),
+    parserPanelToggle: document.getElementById('parser-panel-toggle'),
+    parserPanelBody: document.getElementById('parser-panel-body'),
     textRuleOverlay: document.getElementById('text-rule-overlay'),
     textParseRule: document.getElementById('text-parse-rule'),
     addBinaryRowBtn: document.getElementById('add-binary-row-btn'),
@@ -641,6 +643,9 @@
       monitorView: 'terminal',
       sidebarCollapsed: false,
       parserResultsExpanded: false,
+      // Protocol settings collapse by default; the live results and the
+      // simulator sit outside that body and stay visible either way.
+      parserPanelOpen: false,
       parserResultsCanExpand: false,
       chartDrag: null,
       sendExtensionHeightOverride: 0,
@@ -2546,6 +2551,26 @@
     });
     refs.textParserPane.classList.toggle('hidden', state.parserMode !== 'text');
     refs.binaryParserPane.classList.toggle('hidden', state.parserMode !== 'binary');
+  }
+
+  /* Protocol settings collapse.
+
+     The panel is needed while configuring a protocol and dead weight
+     afterwards, and 8a0effd gave it a third of the rail. The live results and
+     the simulator live outside this body, so collapsing hides configuration
+     only — a newcomer can still switch the simulator on from the collapsed
+     panel. */
+  function applyParserPanelOpen() {
+    const open = Boolean(state.ui.parserPanelOpen);
+    refs.parserPanelBody?.classList.toggle('hidden', !open);
+    refs.parserPanelToggle?.setAttribute('aria-expanded', String(open));
+    const label = refs.parserPanelToggle?.querySelector('.parser-panel-toggle-text');
+    if (label) label.textContent = open ? t('收起') : t('展开');
+  }
+
+  function toggleParserPanel() {
+    state.ui.parserPanelOpen = !state.ui.parserPanelOpen;
+    applyParserPanelOpen();
   }
 
   function toggleMenu(menuEl) {

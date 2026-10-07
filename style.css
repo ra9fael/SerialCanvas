@@ -6380,3 +6380,42 @@ body.compact-single.layout-expanded .device-meta-stack {
   flex: 0 0 auto;
   height: var(--control-h);
 }
+
+/* Parser panel collapse.
+
+   The body holds configuration only — the live results and the simulator sit
+   outside it — so collapsing reclaims the rail without hiding anything a user
+   needs while watching data. */
+.parser-panel-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: var(--kicker-tracking);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.parser-panel-toggle svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.2s ease;
+}
+
+.parser-panel-toggle:hover {
+  color: var(--accent);
+}
+
+.parser-panel-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.parser-panel-body.hidden {
+  display: none;
+}

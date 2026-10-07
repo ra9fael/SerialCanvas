@@ -287,12 +287,23 @@
           <div class="panel-head">
             <div>
               <div class="panel-title">解析协议设置</div>
+              <!-- Collapsed by default: the panel matters while setting a
+                   protocol and is dead weight afterwards, and it was taking a
+                   third of the rail. The live results and the simulator stay
+                   outside this body so they remain reachable. -->
+              <button id="parser-panel-toggle" class="parser-panel-toggle" type="button" aria-expanded="false" aria-controls="parser-panel-body">
+                <span class="parser-panel-toggle-text">展开</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M6 9l6 6 6-6"></path>
+                </svg>
+              </button>
             </div>
             <div class="mode-tabs mode-switch-group parser-mode-switch">
               <button class="mode-tab active" data-parser-mode="text">文本解析</button>
               <button class="mode-tab" data-parser-mode="binary">十六进制解析</button>
             </div>
           </div>
+          <div id="parser-panel-body" class="parser-panel-body">
 
           <section id="text-parser-pane" class="parser-config-card">
             <div class="parser-card-head">
@@ -331,6 +342,7 @@
               <div id="binary-schema-list" class="binary-schema-list"></div>
             </div>
           </section>
+          </div>
 
           <section class="parser-results-card">
             <div class="parser-results-head">

@@ -6553,6 +6553,7 @@
       }
       state.ui.sidebarCollapsed = Boolean(snapshot.layout?.sidebarCollapsed);
       state.ui.parserResultsExpanded = Boolean(snapshot.layout?.parserResultsExpanded);
+      state.ui.parserPanelOpen = Boolean(snapshot.layout?.parserPanelOpen);
       const savedSendExtensionHeight = Number(snapshot.layout?.sendExtensionHeight);
       state.ui.sendExtensionHeightOverride = Number.isFinite(savedSendExtensionHeight) && savedSendExtensionHeight > 0
         ? savedSendExtensionHeight
@@ -6652,6 +6653,7 @@
     applyMonitorView();
     updateSignalControlsUI();
     updateParserModeUI();
+    applyParserPanelOpen();
     renderExtensionButtons();
     renderSendConfigLists('all');
     syncAutoSendRuntime();
@@ -6793,6 +6795,9 @@
         terminalNewline: refs.termNewline?.value || 'n',
         sidebarCollapsed: Boolean(state.ui.sidebarCollapsed),
         parserResultsExpanded: Boolean(state.ui.parserResultsExpanded),
+        // Collapsed by default; persisted because someone who configures a
+        // protocol weekly should not reopen it every session.
+        parserPanelOpen: Boolean(state.ui.parserPanelOpen),
         sendExtensionHeight: Math.max(0, Math.round(Number(state.ui.sendExtensionHeightOverride) || 0))
       },
       // timerId is runtime-only; never let a handle reach storage.
@@ -8011,6 +8016,10 @@
       const open = config?.classList.toggle('is-open') ?? false;
       refs.simulationConfigToggle.setAttribute('aria-expanded', String(open));
     });
+    refs.parserPanelToggle?.addEventListener('click', () => {
+      toggleParserPanel();
+      scheduleLocalPrefsSave();
+    });
     refs.layoutToggleBtn.addEventListener('click', toggleLayoutMode);
     refs.serialModeBtn?.addEventListener('click', toggleLayoutMode);
     refs.parserModeBtn?.addEventListener('click', toggleLayoutMode);
@@ -8590,6 +8599,7 @@
     syncVersionDisplay();
     updateSerialStatus();
     applyMonitorView();
+    applyParserPanelOpen();
     renderTimelineSelect();
     renderStats();
     renderTimelineBar();
@@ -8603,6 +8613,12 @@
   function initializeDefaults() {
     localStorage.removeItem('wsl-layout');
     applyLocalPrefsSnapshot(readLocalPrefs());
+    // The parser panel's collapsed state is only reflected in the DOM by
+    // syncUserConfigControls(), which the config-restore path calls but boot
+    // does not. Without this the panel renders open on every load regardless
+    // of the saved preference, and the first click appears to do nothing - it
+    // just initialises.
+    syncUserConfigControls();
     // Sync the DOM with the restored monitorView (e.g. terminal) - without this
     // the UI stays in the default view while state already says otherwise,
     // which makes the first tab click a no-op.

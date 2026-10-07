@@ -265,6 +265,8 @@
 
     /* Parser */
     '解析协议设置': 'Protocol settings',
+    '收起': 'Collapse',
+    '展开': 'Expand',
     '文本解析': 'Text parsing',
     '文本解析配置': 'Text parse settings',
     '十六进制解析': 'Hex parsing',
