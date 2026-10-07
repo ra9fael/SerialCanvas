@@ -18,8 +18,9 @@ Everything numbered `1.x` is an upstream release by the original author,
 - The three ☰-menu segmented rows (theme / language / corner) now share one style: two CSS
   `:not()` lists forgot `.menu-corner-opt`, so the corner buttons were laid out as list
   buttons (36px tall, generic hover background) instead of segmented ones.
-- The simulation chip in the monitor toolbar shows only in the manual sub-view and drops the
-  frame count — it answers "is this stream real", and the RX counter already says how much.
+- The simulation chip in the monitor toolbar drops the frame count — it answers "is this stream
+  real", and the RX counter already says how much. It shows in both monitor sub-views, including
+  the terminal: the chip sits in the toolbar row above the log, not inside the terminal canvas.
 - The monitor toolbar is a fixed two-row layout (identity and actions / parameter fields),
   replacing the 1280px wrap, 1440px term break and 1560px label-hide patches; labels no
   longer truncate at common window widths.

@@ -398,15 +398,16 @@
      monitor's log — so the question "is this stream a device or the simulator"
      has to be answerable where the stream is watched. The chip answers it and
      nothing more: it is not a control, because two switches for one setting is
-     the duplication it exists to prevent. Manual view only — the terminal
-     sub-view is an emulator session, and a status line inside it would read as
-     program output. Hidden entirely when the simulator is off, so it costs no
+     the duplication it exists to prevent. Both monitor sub-views show it — it
+     sits in the toolbar row above the log, outside the terminal canvas, so it
+     reads as application state rather than as something the connected device
+     printed. Hidden entirely when the simulator is off, so it costs no
      attention in the common case. */
   function applySimulationMonitorChip() {
     const chip = refs.simulationMonitorChip;
     if (!chip) return;
     // The parse view has the real switch; a chip beside it would be noise.
-    if (state.layoutExpanded || state.ui.monitorView !== 'manual') {
+    if (state.layoutExpanded) {
       chip.hidden = true;
       chip.textContent = '';
       chip.classList.remove('is-active', 'is-yielded');

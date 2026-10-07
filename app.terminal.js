@@ -744,8 +744,5 @@
     if (state.ui.monitorView === next) return;
     state.ui.monitorView = next;
     applyMonitorView();
-    // The simulation chip is manual-view only; switching sub-views changes
-    // whether it applies, so refresh it with the rest of the toolbar.
-    applySimulationMonitorChip();
     scheduleLocalPrefsSave();
   }
