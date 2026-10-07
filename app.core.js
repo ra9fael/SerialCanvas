@@ -2445,7 +2445,13 @@
       rightColumn.appendChild(parserPanel);
       rightColumn.appendChild(chartsPanel);
     } else {
+      // The parser panel belongs in the rail's second row by default (it is
+      // what the 1fr row was reserved for), so it has to be appended here.
+      // Left to its original markup position it would precede config-panel and
+      // render above it, since the wrapper is a grid whose rows follow DOM
+      // order. Appended after, it lands below.
       expandedLeftTop.appendChild(configPanel);
+      expandedLeftTop.appendChild(parserPanel);
       leftColumn.appendChild(expandedLeftTop);
       rightColumn.appendChild(monitorPanel);
       rightColumn.appendChild(chartsPanel);

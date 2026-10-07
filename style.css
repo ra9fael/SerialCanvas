@@ -2169,10 +2169,14 @@ body.layout-expanded:not(.compact-single) .left-column {
   overscroll-behavior: contain;
 }
 
+/* The connection panel sizes to its content so the parser panel below it gets
+   the remaining column height. It used to be height: 100%, which pushed the
+   parser panel out of the column entirely — the rail then scrolled instead of
+   showing both. */
 body:not(.layout-expanded):not(.compact-single) .config-panel {
-  height: 100%;
+  height: auto;
   max-height: 100%;
-  align-self: stretch;
+  align-self: start;
 }
 
 body.config-collapsed:not(.compact-single):not(.layout-expanded) .expanded-left-top {
@@ -2821,13 +2825,19 @@ html[lang="en"] .toggle-row .mini-label {
   height: 18px;
 }
 
-.parser-panel,
+/* The parser panel is the default occupant of the rail's 1fr row — it was
+   always meant to be there, and hiding it left a permanent empty row below a
+   432px connection panel in a 934px column. Text parsing (the rule box, the
+   live result cards, the simulator) all work in this view.
+
+   .charts-panel stays behind the toggle: chart configuration belongs with
+   graph parsing, and the chart list is a workspace-sized surface that has no
+   room in a 274px rail. */
 .charts-panel {
   display: none;
   min-height: 0;
 }
 
-body:not(.layout-expanded) .parser-panel,
 body:not(.layout-expanded) .charts-panel {
   display: none !important;
 }
