@@ -395,6 +395,7 @@
     rightColumn: document.querySelector('.right-column'),
     expandedLeftTop: document.querySelector('.expanded-left-top'),
     configPanel: document.querySelector('.config-panel'),
+    simulatorPanel: document.querySelector('.simulator-panel'),
     parserPanel: document.querySelector('.parser-panel'),
     chartsPanel: document.querySelector('.charts-panel'),
     monitorPanel: document.querySelector('.monitor-panel'),
@@ -419,7 +420,6 @@
     simulationTemplate: document.getElementById('simulation-template'),
     simulationFrameTemplate: document.getElementById('simulation-frame-template'),
     simulationFramePreview: document.getElementById('simulation-frame-preview'),
-    simulationConfigToggle: document.getElementById('simulation-config-toggle'),
     addTimeChartBtn: document.getElementById('add-time-chart-btn'),
     addFftChartBtn: document.getElementById('add-fft-chart-btn'),
     addBarChartBtn: document.getElementById('add-bar-chart-btn'),
@@ -718,9 +718,12 @@
       monitorView: 'terminal',
       sidebarCollapsed: false,
       parserResultsExpanded: false,
-      // Protocol settings collapse by default; the live results and the
-      // simulator sit outside that body and stay visible either way.
-      parserPanelOpen: false,
+      // Open by default now. It was collapsed because the settings took a
+      // third of the RAIL; they live in the graph view's wide column now, where
+      // that reasoning does not apply, and arriving at the parse view to find
+      // it folded away is the same "where is the thing I came for" problem the
+      // simulator disclosure had. Still collapsible, and still remembered.
+      parserPanelOpen: true,
       // Terminal key bar starts open; the collapse is a per-user choice about
       // panel height, not a default the app should make for them.
       termKeyBarOpen: true,
@@ -2572,32 +2575,38 @@
 
   /* Panel placement per layout mode.
 
-     The rail is device connection management and nothing else. The parser
-     panel used to sit in the rail's second row, which put the protocol
-     settings — text rule, hex structure table — in the rail while the graph
-     mode showed the very same panel in the right column. Two homes for one
-     panel is a "which one am I editing" problem, and the rail was paying for
-     settings most sessions never touch.
+     The rail is device connection management plus the simulator, which is the
+     other way data arrives: a real port, or locally generated frames. They sit
+     together because they are the same question — where is this data coming
+     from — and the simulator used to be buried inside the parse-results header,
+     where it read as a parser setting rather than a data source.
 
-     So the parser panel always lives in the right column, below the monitor in
-     monitor mode and above the charts in graph mode. The rail holds the
-     connection panel alone, stretched to the full column height so it reads as
-     a deliberate single-purpose rail rather than a half-empty one. */
+     The parse configuration — text rule, hex structure table — belongs to the
+     graph view. It configures how the charts are built, and it used to appear
+     in the rail too, i.e. in two places at once depending on the mode. What
+     stays visible in monitor mode is the parse *result*, because that is what
+     you watch the log for; only the settings move.
+
+     So: rail = connection + simulator; right column = live results under the
+     monitor, and settings + results + charts in graph mode. */
   function arrangeWorkspacePanels() {
     const {
       leftColumn,
       rightColumn,
       expandedLeftTop,
       configPanel,
+      simulatorPanel,
       parserPanel,
       chartsPanel,
       monitorPanel
     } = refs;
-    if (!leftColumn || !rightColumn || !expandedLeftTop || !configPanel || !parserPanel || !chartsPanel || !monitorPanel) {
+    if (!leftColumn || !rightColumn || !expandedLeftTop || !configPanel || !simulatorPanel
+      || !parserPanel || !chartsPanel || !monitorPanel) {
       return;
     }
 
     expandedLeftTop.appendChild(configPanel);
+    expandedLeftTop.appendChild(simulatorPanel);
     leftColumn.appendChild(expandedLeftTop);
     if (state.layoutExpanded) {
       // Graph mode hides the monitor (see style.css), so the parser panel and
@@ -2606,8 +2615,23 @@
       rightColumn.appendChild(chartsPanel);
     } else {
       rightColumn.appendChild(monitorPanel);
+      // Settings hidden, results shown: see applyLayoutModePanels().
       rightColumn.appendChild(parserPanel);
     }
+  }
+
+  /* Shows the parse configuration only in the graph view.
+
+     The configuration is what defines the charts, and the charts are only in
+     the graph view; in monitor mode the panel is the live result alone, with
+     the settings and the expand toggle both out of the way. The body class
+     does the hiding rather than a second code path, so the same panel is one
+     element either way and the persisted collapse state still applies when
+     the user switches back. */
+  function applyLayoutModePanels() {
+    const showSettings = Boolean(state.layoutExpanded);
+    appEl.classList.toggle('parser-settings-inline', !showSettings);
+    applyParserPanelOpen();
   }
 
   function applyLayout(animate = true) {
@@ -2621,6 +2645,9 @@
         { transform: 'scale(1)' }
       ], { duration: 180, easing: 'ease-out' });
     }
+    // After the class is on the body, so the panel body and the mode switch
+    // hide/show in the same frame as the rest of the mode change.
+    applyLayoutModePanels();
     syncCompactLayoutState();
     renderCharts();
     requestAnimationFrame(() => {
@@ -2638,16 +2665,19 @@
     refs.binaryParserPane.classList.toggle('hidden', state.parserMode !== 'binary');
   }
 
-  /* Protocol settings collapse.
+  /* Parse-settings collapse.
 
-     The panel is needed while configuring a protocol and dead weight
-     afterwards, and 8a0effd gave it a third of the rail. The live results and
-     the simulator live outside this body, so collapsing hides configuration
-     only — a newcomer can still switch the simulator on from the collapsed
-     panel. */
+     The body is configuration only — the live results sit outside it — so
+     collapsing hides configuration and nothing else. It only applies in the
+     graph view: in monitor mode the whole settings block is out of the way
+     anyway (see applyLayoutModePanels), and a toggle there would be offering to
+     reveal something the mode deliberately does not show. The persisted state
+     is left untouched, so switching back to graph mode restores what the user
+     had. */
   function applyParserPanelOpen() {
     const open = Boolean(state.ui.parserPanelOpen);
-    refs.parserPanelBody?.classList.toggle('hidden', !open);
+    const settingsAvailable = Boolean(state.layoutExpanded);
+    refs.parserPanelBody?.classList.toggle('hidden', !open || !settingsAvailable);
     refs.parserPanelToggle?.setAttribute('aria-expanded', String(open));
     const label = refs.parserPanelToggle?.querySelector('.parser-panel-toggle-text');
     if (label) label.textContent = open ? t('收起') : t('展开');

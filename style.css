@@ -2069,15 +2069,93 @@ body:not(.compact-single) .left-column {
   justify-self: start;
 }
 
+/* Monitor mode shows the parse RESULT only. The configuration — text rule,
+   hex structure table — configures the charts, and the charts are in the graph
+   view, so it is hidden here along with the title that introduces it. Doing it
+   with a body class keeps one panel element for both modes instead of two
+   code paths that can disagree about what is visible. */
+body.parser-settings-inline .parser-panel > .panel-head,
+body.parser-settings-inline #parser-panel-body {
+  display: none;
+}
+
+body.parser-settings-inline .parser-results-card {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Simulator panel (the second data source, beside the connection). */
+.simulator-panel {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 8px;
+  min-height: 0;
+  overflow: visible;
+}
+
+.simulator-panel .panel-head {
+  display: block;
+  padding: 0;
+}
+
+.simulator-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.simulator-head .term-toggle {
+  flex: 0 0 auto;
+}
+
+.simulator-body {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* The pacing row is part of the panel body now, not a disclosure inside a
+   results header, so it is a plain grid rather than a wrapped flex line. */
+.simulator-panel .simulation-config {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.simulator-panel .simulation-config.is-open {
+  display: grid;
+}
+
+.simulator-panel .simulation-template-field {
+  grid-column: 1 / -1;
+}
+
+.simulator-panel .simulation-frame-preview {
+  grid-column: 1 / -1;
+}
+
+/* Narrow rail: the rail is fluid (clamp(248px, 19vw, 320px)), so the pacing
+   grid has to collapse on the viewport, not on a container that does not
+   exist here. */
+@media (max-width: 1180px) {
+  .simulator-panel .simulation-config {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .expanded-left-top {
   display: grid;
   gap: 8px;
   min-width: 0;
   min-height: 0;
-}
-
-body:not(.compact-single):not(.layout-expanded) .expanded-left-top {
-  height: 100%;
 }
 
 body.layout-expanded:not(.compact-single) .expanded-left-top {
@@ -2179,10 +2257,17 @@ body.layout-expanded:not(.compact-single) .left-column {
 /* The rail holds the connection panel alone (see arrangeWorkspacePanels), so
    it now stretches to the full column height instead of hugging its content and
    leaving a gap underneath. The panel scrolls internally when it overflows. */
+/* The rail holds the connection panel and the simulator, both of which size to
+   their content, so the column is one auto row and the connection panel keeps
+   its internal scroll for a long signal-config list. */
+body:not(.layout-expanded):not(.compact-single) .expanded-left-top {
+  align-content: start;
+}
+
 body:not(.layout-expanded):not(.compact-single) .config-panel {
-  height: 100%;
+  height: auto;
   max-height: 100%;
-  align-self: stretch;
+  align-self: start;
 }
 
 body.config-collapsed:not(.compact-single):not(.layout-expanded) .expanded-left-top {
@@ -6474,16 +6559,12 @@ body.compact-single.layout-expanded .device-meta-stack {
   cursor: not-allowed;
 }
 
-.simulation-config-toggle {
-  flex: 0 0 auto;
-  height: var(--control-h);
-}
-
 /* Parser panel collapse.
 
-   The body holds configuration only — the live results and the simulator sit
-   outside it — so collapsing reclaims the rail without hiding anything a user
-   needs while watching data. */
+   The body holds configuration only — the live results sit outside it — so
+   collapsing reclaims the height without hiding anything a user needs while
+   watching data. The simulator moved to its own panel in the rail, so it is no
+   longer part of this panel at all.
 .parser-panel-toggle {
   display: inline-flex;
   align-items: center;

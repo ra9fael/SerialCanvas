@@ -346,54 +346,65 @@
           <section class="parser-results-card">
             <div class="parser-results-head">
               <div class="panel-title parser-results-title">实时解析结果 <span class="panel-title-note">可录制时间线导出解析结果</span></div>
-              <div class="simulation-controls">
-                <label class="term-field term-toggle" title="本地生成协议数据走同一 RX 通道，无需连接设备即可验证解析与图表">
-                  <input id="simulation-enabled" type="checkbox">
-                  <span>模拟数据</span>
-                </label>
-                <label class="term-field" title="选择模拟的协议脚本">
-                  <span>脚本</span>
-                  <select id="simulation-script"></select>
-                </label>
-                <!-- Frame count and the yield state, both readable at a glance.
-                     A transient toast is not enough: the question "is this a
-                     device or the simulator" has to be answerable while
-                     watching the log, not only when it was switched. -->
-                <span id="simulation-status" class="simulation-status" role="status"></span>
-              </div>
-              <!-- Pacing and payload. The interval and burst shape what the
-                   stream looks like on the wire; the templates are what makes the
-                   simulator useful for testing a real rule rather than the
-                   built-in one. Open by default: a simulator whose data format
-                   cannot be found is not configurable. -->
-              <div class="simulation-config is-open">
-                <label class="term-field" title="两次发送之间的间隔">
-                  <span>间隔</span>
-                  <select id="simulation-interval"></select>
-                </label>
-                <label class="term-field" title="每个间隔发送的帧数，用于模拟一次应答多帧的设备">
-                  <span>每次帧数</span>
-                  <select id="simulation-burst"></select>
-                </label>
-                <label class="term-field simulation-template-field" title="自定义文本载荷。可用占位符：{n} 计数、{temp} 温度、{hum} 湿度、{tick} 序号、{ts} 总帧数。仅对文本脚本生效。">
-                  <span>载荷模板</span>
-                  <input id="simulation-template" type="text" maxlength="200" placeholder="使用脚本默认" spellcheck="false" autocomplete="off">
-                </label>
-                <label class="term-field simulation-template-field" title="自定义二进制帧格式。十六进制字节与占位符混写：{t} 温度×10、{h} 湿度、{n} 帧序号、{sum} 前面占位符字节的 SUM8 校验和（与结构表一致，不含帧头帧尾）。">
-                  <span>帧模板</span>
-                  <input id="simulation-frame-template" type="text" maxlength="160" placeholder="A5 {t} {h} {sum} 5A" spellcheck="false" autocomplete="off">
-                </label>
-                <span id="simulation-frame-preview" class="simulation-frame-preview" aria-live="off"></span>
-                <button id="simulation-config-toggle" class="mini-btn simulation-config-toggle" type="button" aria-expanded="true" title="收起模拟参数">
-                  <span class="simulation-config-toggle-text">收起</span>
-                </button>
-              </div>
               <button id="toggle-parser-results-btn" class="secondary-btn parser-results-toggle" type="button" aria-expanded="false">展开</button>
             </div>
             <div id="parser-preview" class="parser-result-grid"></div>
           </section>
         </section>
         </div>
+
+        <!-- The simulator is a data SOURCE, not part of the parse configuration.
+             It used to live inside the parse-results header, which put "where do
+             my test bytes come from" and "how do I decode them" in one control
+             cluster — and made the source settings look like parser settings.
+             It is its own panel in the rail now, next to the connection it
+             substitutes for. -->
+        <section class="panel simulator-panel">
+          <div class="panel-head">
+            <div class="simulator-head">
+              <label class="term-field term-toggle" title="本地生成协议数据走同一 RX 通道，无需连接设备即可验证解析与图表">
+                <input id="simulation-enabled" type="checkbox">
+                <span>模拟数据源</span>
+              </label>
+              <!-- Frame count and the yield state, both readable at a glance.
+                   A transient toast is not enough: the question "is this a
+                   device or the simulator" has to be answerable while
+                   watching the log, not only when it was switched. -->
+              <span id="simulation-status" class="simulation-status" role="status"></span>
+            </div>
+          </div>
+
+          <div class="simulator-body">
+            <label class="term-field" title="选择模拟的协议脚本">
+              <span>脚本</span>
+              <select id="simulation-script"></select>
+            </label>
+            <!-- Pacing and payload. The interval and burst shape what the stream
+                 looks like on the wire; the templates are what makes the
+                 simulator useful for testing a real rule rather than the built-in
+                 one. No disclosure: a source whose format cannot be found is not
+                 configurable, and this panel is only shown when asked for. -->
+            <div class="simulation-config is-open">
+              <label class="term-field" title="两次发送之间的间隔">
+                <span>间隔</span>
+                <select id="simulation-interval"></select>
+              </label>
+              <label class="term-field" title="每个间隔发送的帧数，用于模拟一次应答多帧的设备">
+                <span>每次帧数</span>
+                <select id="simulation-burst"></select>
+              </label>
+              <label class="term-field simulation-template-field" title="自定义文本载荷。可用占位符：{n} 计数、{temp} 温度、{hum} 湿度、{tick} 序号、{ts} 总帧数。仅对文本脚本生效。">
+                <span>载荷模板</span>
+                <input id="simulation-template" type="text" maxlength="200" placeholder="使用脚本默认" spellcheck="false" autocomplete="off">
+              </label>
+              <label class="term-field simulation-template-field" title="自定义二进制帧格式。十六进制字节与占位符混写：{t} 温度×10、{h} 湿度、{n} 帧序号、{sum} 前面占位符字节的 SUM8 校验和（与结构表一致，不含帧头帧尾）。">
+                <span>帧模板</span>
+                <input id="simulation-frame-template" type="text" maxlength="160" placeholder="A5 {t} {h} {sum} 5A" spellcheck="false" autocomplete="off">
+              </label>
+              <span id="simulation-frame-preview" class="simulation-frame-preview" aria-live="off"></span>
+            </div>
+          </div>
+        </section>
 
         <section class="charts-panel">
           <div class="chart-add-strip">

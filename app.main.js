@@ -368,17 +368,6 @@
     refs.simulationStatus.classList.toggle('is-yielded', yielded);
   }
 
-  /* Simulator parameter disclosure, open by default. */
-  function applySimulationConfigOpen(open = true) {
-    const toggle = refs.simulationConfigToggle;
-    const config = toggle?.closest('.simulation-config');
-    if (!toggle || !config) return;
-    config.classList.toggle('is-open', open);
-    toggle.setAttribute('aria-expanded', String(open));
-    const label = toggle.querySelector('.simulation-config-toggle-text');
-    if (label) label.textContent = open ? t('收起') : t('调参');
-  }
-
   function syncBufferUi() {
     if (refs.termScrollback) refs.termScrollback.value = String(getTerminalScrollback());
     if (refs.liveBufferSize) refs.liveBufferSize.value = String(liveBufferLimit());
@@ -3228,12 +3217,20 @@
     runtime.chartFrameLastTimestamp = normalizedTimestamp;
   }
 
-  function pushDerivedChartValues(runtime, values, timestamp, prefix = 'parsed') {
+  /* Pushes one parsed frame's values into the chart series.
+
+     base is a parameter, not a prefix lookup. It used to be derived from the
+     prefix, so the binary path — which passes the same 'parsed' prefix as the
+     text path, because "parsed" describes the values, not the source — read
+     textBaseTimestamp. That is never set in binary mode, so every binary frame
+     fell back to `timestamp` as its own base: relative was 0 for all of them
+     and the whole series collapsed onto a single x position. One dot on the
+     chart, which is what a binary frame stream looked like.
+
+     The caller now states which base it means. */
+  function pushDerivedChartValues(runtime, values, timestamp, base, prefix = 'parsed') {
     const normalizedTimestamp = normalizeTimestampMs(timestamp);
-    const baseTimestamp = prefix === 'parsed'
-      ? (runtime.textBaseTimestamp || normalizedTimestamp)
-      : (runtime.binaryBaseTimestamp || normalizedTimestamp);
-    const relative = Math.max(0, normalizedTimestamp - baseTimestamp);
+    const relative = Math.max(0, normalizedTimestamp - (Number(base) || normalizedTimestamp));
     let hasNumeric = false;
     Object.entries(values || {}).forEach(([key, value]) => {
       const fieldKey = `${prefix}.${key}`;
@@ -3306,7 +3303,7 @@
           }
         });
       }
-      pushDerivedChartValues(runtime, parsed.values, timestamp, 'parsed');
+      pushDerivedChartValues(runtime, parsed.values, timestamp, runtime.textBaseTimestamp);
     }
     updateDerivedChartFrameStats(runtime, timestamp);
   }
@@ -3336,7 +3333,9 @@
       if (!runtime.allCardsMap) runtime.allCardsMap = {};
       frame.cards.forEach(function(c) { runtime.allCardsMap[c.key] = c.value; });
       runtime.latestCards = Object.keys(runtime.allCardsMap).map(function(k) { return { key: k, value: runtime.allCardsMap[k] }; });
-      pushDerivedChartValues(runtime, frame.values, timestamp, 'parsed');
+      // binaryBaseTimestamp, not the text one: this is the binary path, and
+      // reading the text base here is what collapsed every frame onto x = 0.
+      pushDerivedChartValues(runtime, frame.values, timestamp, runtime.binaryBaseTimestamp);
       updateDerivedChartFrameStats(runtime, timestamp);
     });
   }
@@ -8108,18 +8107,6 @@
       state.settings.simulation.frameTemplate = refs.simulationFrameTemplate.value.slice(0, SIMULATION_FRAME_TEMPLATE_MAX);
       syncSimulationUi();
       scheduleLocalPrefsSave();
-    });
-    /* The template lives behind a disclosure, and the complaint that started
-       this was "I cannot find a place to configure the simulated data format".
-       So the config is open by default, and the button collapses it. */
-    applySimulationConfigOpen();
-    refs.simulationConfigToggle?.addEventListener('click', () => {
-      const config = refs.simulationConfigToggle.closest('.simulation-config');
-      const open = !(config?.classList.contains('is-open') ?? false);
-      config?.classList.toggle('is-open', open);
-      refs.simulationConfigToggle.setAttribute('aria-expanded', String(open));
-      const label = refs.simulationConfigToggle.querySelector('.simulation-config-toggle-text');
-      if (label) label.textContent = open ? t('收起') : t('调参');
     });
     refs.parserPanelToggle?.addEventListener('click', () => {
       toggleParserPanel();
