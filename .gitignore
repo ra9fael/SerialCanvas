@@ -22,3 +22,8 @@ Desktop.ini
 .DS_Store
 
 tmp/
+.workbuddy/
+.qoder/
+.qodercn/
+.qoderclicn/
+
