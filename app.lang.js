@@ -168,6 +168,12 @@
     '开': 'On',
     '关': 'Off',
     '未知': 'Unknown',
+    '高电平': 'High',
+    '低电平': 'Low',
+    '未知：串口未连接或驱动不报告该信号': 'Unknown: port not connected, or the driver does not report this signal',
+    '高电平': 'High',
+    '低电平': 'Low',
+    '未知：串口未连接或驱动不报告该信号': 'Unknown: port not connected, or the driver does not report this signal',
 
     /* Monitor view */
     '串口监视': 'Serial monitor',

@@ -676,7 +676,15 @@
   function signalValueLabel(value) {
     if (value === true) return t('开');
     if (value === false) return t('关');
-    return t('未知');
+    // An em dash rather than the word: four of these share a 274px row and
+    // "Unknown" wraps and squashes the box. The full word stays in the title.
+    return '\u2014';
+  }
+
+  function signalValueTitle(value) {
+    if (value === true) return t('高电平');
+    if (value === false) return t('低电平');
+    return t('未知：串口未连接或驱动不报告该信号');
   }
 
   function isAutoHardwareFlowControlActive() {
@@ -738,6 +746,7 @@
     ];
     inputDefs.forEach(({ el, valueEl, value }) => {
       valueEl.textContent = signalValueLabel(value);
+      el.title = signalValueTitle(value);
       el.classList.toggle('is-on', value === true);
       el.classList.toggle('is-unknown', value === null || value === undefined);
     });
