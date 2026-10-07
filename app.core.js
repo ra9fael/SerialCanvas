@@ -53,10 +53,11 @@
   const SIMULATION_SCRIPTS = {
     'text-sensor': {
       label: '文本：传感器读数',
-      // Matches the documented rule "/name0=/float0,/name1=/int0". The
-      // trailing \n matters: frames are split on CR/LF, so without it every tick
-      // would concatenate into one ever-growing display event instead of one
-      // line per reading. Real devices terminate their frames too.
+      /* Matches the documented rule "/name0=/float0,/name1=/int0". The
+         trailing \n matters: frames are split on CR/LF, so without it every tick
+         would concatenate into one ever-growing display event instead of one
+         line per reading. Real devices terminate their frames too. */
+      textRule: '/name0=/float0,/name1=/int0',
       build: (tick) => {
         const temp = 21 + Math.sin(tick / 9) * 3.5;
         const hum = 48 + Math.cos(tick / 7) * 6;
@@ -77,17 +78,38 @@
     },
     'binary-frame': {
       label: '二进制：A5 帧',
-      // Matches the default seeded schema: header A5 / two data bytes /
-      // SUM8 checksum / footer 5A. Float16 is avoided deliberately: a software
-      // decoder plus a hand-built encoder is a lot of surface for a demo.
+      /* Frame layout: A5 / payload / SUM8 / 5A.
+
+         The payload is ONE uint16 little-endian field packing temp*10 and
+         humidity, so it decodes under a single schema row. The previous
+         version emitted two separate bytes, which cannot match a one-row
+         schema and therefore produced empty parse cards — the comment here
+         used to claim it "matches the default seeded schema" and that was
+         false, because state.parser.binarySchema defaults to [] and no schema
+         exists until the binary pane is rendered.
+
+         schema below is what this script needs. Selecting it fills the table,
+         so the simulator demonstrates the parser instead of requiring the user
+         to hand-build a structure to see a decoded value.
+
+         Float16 is avoided deliberately: a software decoder plus a hand-built
+         encoder is a lot of surface for a demo. */
+      schema: [
+        { kind: 'header', value: 'A5' },
+        // nameAuto false: this is a semantic name the script chose, not one
+        // derived from the type. updateBinaryRowAutoName() would otherwise
+        // rewrite it to "uint0" the first time the table renders.
+        { kind: 'data', value: '', dataType: 'uint16le', name: 'reading', nameAuto: false },
+        { kind: 'checksum', value: 'SUM8', name: 'checksum', nameAuto: false },
+        { kind: 'footer', value: '5A' }
+      ],
       build: (tick) => {
         const temp = 21 + Math.sin(tick / 9) * 3.5;
         const hum = 48 + Math.cos(tick / 7) * 6;
-        const body = [
-          0xa5,
-          Math.round(Math.max(0, Math.min(255, temp * 10))),
-          Math.round(Math.max(0, Math.min(255, hum)))
-        ];
+        // temp*10 in the high byte, humidity in the low byte.
+        const reading = (Math.round(Math.max(0, Math.min(255, temp * 10))) << 8)
+          | Math.round(Math.max(0, Math.min(255, hum)));
+        const body = [0xa5, (reading >> 8) & 0xff, reading & 0xff];
         const checksum = body.slice(1).reduce((sum, b) => (sum + b) & 0xff, 0);
         return Uint8Array.from(body.concat([checksum, 0x5a]));
       }
@@ -483,6 +505,10 @@
     },
     parser: {
       textRule: '',
+      // True while the rule box holds the simulator's suggested rule rather
+      // than something the user typed. Selecting a simulator script may
+      // overwrite it; a hand-written rule is never touched.
+      textRuleIsAuto: false,
       binarySchema: []
     },
     derived: {
@@ -1618,6 +1644,9 @@
     if (!snapshot) return;
     state.parserMode = snapshot.mode === 'binary' ? 'binary' : 'text';
     state.parser.textRule = String(snapshot.text?.rule || snapshot.textRule || '');
+    // Restored, not typed: treat it as replaceable by a simulator script so a
+    // saved suggestion does not block applying the matching one.
+    state.parser.textRuleIsAuto = true;
     state.parser.binarySchema = Array.isArray(snapshot.binary?.rows)
       ? snapshot.binary.rows.map((row) => normalizeBinarySchemaRowFromConfig(row))
       : Array.isArray(snapshot.binarySchema)

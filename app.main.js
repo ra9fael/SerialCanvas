@@ -134,6 +134,77 @@
     return SIMULATION_SCRIPTS[state.settings.simulation.scriptId] || SIMULATION_SCRIPTS['text-sensor'];
   }
 
+  /* Writes the parser configuration a script needs.
+
+     The simulator exists to demonstrate the parser, so requiring the user to
+     hand-build a structure table before seeing a decoded value defeats it.
+     Each script declares textRule and/or schema, and selecting it applies them.
+
+     Only applied when the target is empty or already auto-generated, so a
+     hand-written rule the user typed is never overwritten. */
+  function applySimulationScriptConfig(scriptId) {
+    const script = SIMULATION_SCRIPTS[scriptId];
+    if (!script) return;
+
+    if (script.textRule && refs.textParseRule) {
+      const current = String(refs.textParseRule.value || '').trim();
+      if (!current || state.parser.textRuleIsAuto) {
+        refs.textParseRule.value = script.textRule;
+        state.parser.textRule = script.textRule;
+        state.parser.textRuleIsAuto = true;
+        invalidateDerivedCaches();
+        renderTextRuleOverlay();
+      }
+    }
+
+    if (Array.isArray(script.schema) && script.schema.length) {
+      const current = state.parser.binarySchema || [];
+      /* Replaceable when the table is empty, or when every row is still either
+         the bare seed ensureBinarySchemaRow() creates or a previous script's.
+
+         A row blocks replacement when the user has given it a name of their own
+         that is not auto-derived — keyed on name/nameAuto rather than on a flag,
+         because the seeded rows predate any flag. An earlier version tested
+         row.__autoFromScript for this, which the seeded rows do not carry, so
+         selecting a binary script silently did nothing at all. */
+      const allReplaceable = current.length === 0
+        || current.every((row) => row.__autoFromScript
+          || row.name === ''
+          || row.nameAuto === true
+          || row.name === undefined);
+      // A previous script's rows are marked, so re-selecting a script replaces
+      // its own rows even though they carry a fixed name.
+      // A previous script's rows are marked, so re-selecting a script replaces
+      // its own rows even though they carry a fixed name.
+      if (allReplaceable) {
+        state.parser.binarySchema = script.schema.map((row) => {
+          const created = createBinarySchemaRow(row.kind);
+          created.value = row.value ?? created.value;
+          if (row.dataType) created.dataType = row.dataType;
+          if (row.name !== undefined) {
+            created.name = row.name;
+            created.nameAuto = Boolean(row.nameAuto);
+          }
+          created.__autoFromScript = true;
+          return created;
+        });
+        // The binary frame can only be decoded in binary mode. Selecting a
+        // binary script and staying in text mode is what made the previous
+        // version look like it produced data but decoded nothing.
+        state.parserMode = 'binary';
+        updateParserModeUI();
+        invalidateDerivedCaches();
+        scheduleBinarySchemaReparse(true);
+      }
+    } else if (state.parserMode === 'binary') {
+      // A text script has no schema, so the binary table would not apply.
+      state.parserMode = 'text';
+      updateParserModeUI();
+      invalidateDerivedCaches();
+      scheduleRefresh();
+    }
+  }
+
   function emitSimulationFrame() {
     const sim = state.settings.simulation;
     if (!sim.enabled || !isSimulationAvailable()) return;
@@ -7798,6 +7869,7 @@
     refs.simulationScript?.addEventListener('change', () => {
       const next = refs.simulationScript.value;
       state.settings.simulation.scriptId = SIMULATION_SCRIPT_IDS.includes(next) ? next : 'text-sensor';
+      applySimulationScriptConfig(state.settings.simulation.scriptId);
       // Restart so the new script takes effect immediately rather than on the
       // next enable.
       if (state.settings.simulation.enabled) {
@@ -8014,6 +8086,9 @@
     });
     refs.textParseRule.addEventListener('input', () => {
       state.parser.textRule = refs.textParseRule.value;
+      // A keystroke means the rule is the user's, so a later script change must
+      // not overwrite it.
+      state.parser.textRuleIsAuto = false;
       invalidateDerivedCaches();
       renderTextRuleOverlay();
       scheduleRefresh();
