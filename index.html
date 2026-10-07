@@ -350,6 +350,25 @@
                      watching the log, not only when it was switched. -->
                 <span id="simulation-status" class="simulation-status" role="status"></span>
               </div>
+              <!-- Pacing and payload. The interval and burst shape what the
+                   stream looks like on the wire; the template is what makes the
+                   simulator useful for testing a real rule rather than the
+                   built-in one. -->
+              <div class="simulation-config">
+                <label class="term-field" title="两次发送之间的间隔">
+                  <span>间隔</span>
+                  <select id="simulation-interval"></select>
+                </label>
+                <label class="term-field" title="每个间隔发送的帧数，用于模拟一次应答多帧的设备">
+                  <span>每次帧数</span>
+                  <select id="simulation-burst"></select>
+                </label>
+                <label class="term-field simulation-template-field" title="自定义文本载荷。可用占位符：{n} 计数、{temp} 温度、{hum} 湿度、{tick} 序号、{ts} 总帧数。仅对文本脚本生效。">
+                  <span>载荷模板</span>
+                  <input id="simulation-template" type="text" maxlength="200" placeholder="使用脚本默认" spellcheck="false" autocomplete="off">
+                </label>
+                <button id="simulation-config-toggle" class="mini-btn simulation-config-toggle" type="button" aria-expanded="false" title="展开模拟参数">调参</button>
+              </div>
               <button id="toggle-parser-results-btn" class="secondary-btn parser-results-toggle" type="button" aria-expanded="false">展开</button>
             </div>
             <div id="parser-preview" class="parser-result-grid"></div>

@@ -116,8 +116,32 @@
     }
   };
   const SIMULATION_SCRIPT_IDS = Object.keys(SIMULATION_SCRIPTS);
-  const SIMULATION_TICK_MS = 700;
   const SIMULATION_MAX_TICKS = 10000;
+
+  /* Simulator pacing.
+
+     700ms was arbitrary and unreachable in either direction: a fast protocol
+     demo wants tens of milliseconds, a slow sensor wants seconds. Burst size
+     covers the other common shape, where a device answers several frames per
+     poll and the parser has to cope with the backlog. */
+  const SIMULATION_INTERVALS = [
+    { value: 60, label: '60 毫秒' },
+    { value: 200, label: '200 毫秒' },
+    { value: 700, label: '700 毫秒' },
+    { value: 2000, label: '2 秒' },
+    { value: 5000, label: '5 秒' }
+  ];
+  const SIMULATION_INTERVAL_DEFAULT = 700;
+  const SIMULATION_BURSTS = [1, 4, 8, 16];
+  const SIMULATION_BURST_DEFAULT = 1;
+
+  /* Payload template placeholders. Text-only by design: the result is always run
+     through encodeText() before queueRxBytes(), and a template that produced
+     binary would need an encoding mode. Substitution happens on the plain
+     string, never on markup. */
+  const SIMULATION_TEMPLATE_DEFAULT = '';
+  const SIMULATION_TEMPLATE_MAX = 200;
+  const SIMULATION_PLACEHOLDERS = ['{n}', '{temp}', '{hum}', '{tick}', '{ts}'];
 
   /* Keyboard shortcuts.
 
@@ -319,6 +343,10 @@
     simulationEnabled: document.getElementById('simulation-enabled'),
     simulationScript: document.getElementById('simulation-script'),
     simulationStatus: document.getElementById('simulation-status'),
+    simulationInterval: document.getElementById('simulation-interval'),
+    simulationBurst: document.getElementById('simulation-burst'),
+    simulationTemplate: document.getElementById('simulation-template'),
+    simulationConfigToggle: document.getElementById('simulation-config-toggle'),
     addTimeChartBtn: document.getElementById('add-time-chart-btn'),
     addFftChartBtn: document.getElementById('add-fft-chart-btn'),
     addBarChartBtn: document.getElementById('add-bar-chart-btn'),
@@ -471,7 +499,12 @@
         tick: 0,
         // Cumulative frames emitted, shown next to the switch so a mixed log
         // can be accounted for. Session-scoped, not persisted.
-        totalFrames: 0
+        totalFrames: 0,
+        intervalMs: SIMULATION_INTERVAL_DEFAULT,
+        burst: SIMULATION_BURST_DEFAULT,
+        // Empty means "use the script's own output". When set, only text
+        // scripts use it; a binary frame has no meaningful template.
+        template: SIMULATION_TEMPLATE_DEFAULT
       },
       rxDisplayMode: 'text',
       textEncoding: 'utf-8',

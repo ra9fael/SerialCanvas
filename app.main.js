@@ -205,25 +205,78 @@
     }
   }
 
+  /* Expands the payload template.
+
+     Plain string substitution on the text a script produces, never on markup:
+     the result goes straight to encodeText() and then queueRxBytes(), so there
+     is no HTML path. Placeholders are {n} (tick), {temp}, {hum}, {tick} and
+     {ts} (frame counter).
+
+     Applies to text scripts only. A binary frame has no textual shape to
+     template, so the binary script ignores it rather than pretending.
+
+     A trailing newline is appended when the template does not end in one.
+     Frames are split on CR/LF, so an unterminated template would concatenate
+     every tick into one ever-growing display event — the same trap the
+     built-in text script already had to be fixed for. */
+  function applySimulationTemplate(text, tick) {
+    const template = String(state.settings.simulation.template || '').trim();
+    if (!template) return text;
+    const temp = 21 + Math.sin(tick / 9) * 3.5;
+    const hum = 48 + Math.cos(tick / 7) * 6;
+    const expanded = template
+      .split('{n}').join(String(tick))
+      .split('{temp}').join(temp.toFixed(1))
+      .split('{hum}').join(String(Math.round(hum)))
+      .split('{tick}').join(String(tick))
+      .split('{ts}').join(String(state.settings.simulation.totalFrames));
+    return /[\r\n]$/.test(expanded) ? expanded : `${expanded}\n`;
+  }
+
   function emitSimulationFrame() {
     const sim = state.settings.simulation;
     if (!sim.enabled || !isSimulationAvailable()) return;
     // Yield to a real device if one is attached.
     if (state.serial.connected) return;
-    const frame = simulationScript().build(sim.tick);
-    sim.tick += 1;
-    if (sim.tick > SIMULATION_MAX_TICKS) sim.tick = 0;
-    const payload = frame instanceof Uint8Array ? frame : encodeText(String(frame), state.settings.textEncoding);
-    sim.totalFrames += 1;
+    const script = simulationScript();
+    // A burst emits several frames per tick, which is how a device that answers
+    // more than once per poll looks. Each goes through queueRxBytes() separately
+    // so line splitting and parsing behave exactly as they would on the wire.
+    const burst = SIMULATION_BURSTS.includes(Number(sim.burst)) ? Number(sim.burst) : SIMULATION_BURST_DEFAULT;
+    for (let index = 0; index < burst; index += 1) {
+      const frame = script.build(sim.tick);
+      sim.tick += 1;
+      if (sim.tick > SIMULATION_MAX_TICKS) sim.tick = 0;
+      /* The text scripts encode inside build(), so their return value is a
+         Uint8Array just like the binary script's. Branching on the instance
+         would therefore send every text script down the binary path and the
+         template could never apply. The binary script is identified by having a
+         schema instead — that is what actually distinguishes the two. */
+      const isBinaryScript = Boolean(script.schema);
+      const payload = isBinaryScript
+        ? frame
+        : encodeText(
+          applySimulationTemplate(decodeBytes(frame, state.settings.textEncoding), sim.tick),
+          state.settings.textEncoding
+        );
+      sim.totalFrames += 1;
+      queueRxBytes(payload, nowPreciseMs(), { source: 'serial-read', simulated: true });
+    }
     syncSimulationUi();
-    queueRxBytes(payload, nowPreciseMs(), { source: 'serial-read', simulated: true });
+  }
+
+  function simulationIntervalMs() {
+    const value = Number(state.settings.simulation.intervalMs);
+    return SIMULATION_INTERVALS.some((item) => item.value === value)
+      ? value
+      : SIMULATION_INTERVAL_DEFAULT;
   }
 
   function startSimulation() {
     const sim = state.settings.simulation;
     if (sim.timerId) return;
     emitSimulationFrame();
-    sim.timerId = window.setInterval(emitSimulationFrame, SIMULATION_TICK_MS);
+    sim.timerId = window.setInterval(emitSimulationFrame, simulationIntervalMs());
   }
 
   function stopSimulation() {
@@ -254,6 +307,23 @@
     const sim = state.settings.simulation;
     if (refs.simulationEnabled) refs.simulationEnabled.checked = sim.enabled;
     if (refs.simulationScript) refs.simulationScript.value = sim.scriptId;
+    if (refs.simulationInterval) refs.simulationInterval.value = String(simulationIntervalMs());
+    if (refs.simulationBurst) {
+      const burst = SIMULATION_BURSTS.includes(Number(sim.burst)) ? Number(sim.burst) : SIMULATION_BURST_DEFAULT;
+      refs.simulationBurst.value = String(burst);
+    }
+    // Only write the template field when it differs, so typing is not
+    // interrupted by the frame counter refresh that runs on every emit.
+    if (refs.simulationTemplate && refs.simulationTemplate.value !== String(sim.template || '')) {
+      refs.simulationTemplate.value = String(sim.template || '');
+    }
+    // A binary frame has no textual shape, so the template would silently do
+    // nothing. Disable it rather than letting it look like it works.
+    const isBinary = Boolean(SIMULATION_SCRIPTS[sim.scriptId]?.schema);
+    if (refs.simulationTemplate) {
+      refs.simulationTemplate.disabled = isBinary;
+      refs.simulationTemplate.closest('.term-field')?.classList.toggle('is-disabled', isBinary);
+    }
     if (!refs.simulationStatus) return;
     const yielded = sim.enabled && state.serial.connected;
     const parts = [];
@@ -274,14 +344,32 @@
 
   function populateSimulationScripts() {
     const host = refs.simulationScript;
-    if (!host) return;
-    if (host.options.length) return;
-    SIMULATION_SCRIPT_IDS.forEach((id) => {
-      const option = document.createElement('option');
-      option.value = id;
-      option.textContent = t(SIMULATION_SCRIPTS[id].label);
-      host.appendChild(option);
-    });
+    if (host && !host.options.length) {
+      SIMULATION_SCRIPT_IDS.forEach((id) => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = t(SIMULATION_SCRIPTS[id].label);
+        host.appendChild(option);
+      });
+    }
+    const intervalHost = refs.simulationInterval;
+    if (intervalHost && !intervalHost.options.length) {
+      SIMULATION_INTERVALS.forEach((item) => {
+        const option = document.createElement('option');
+        option.value = String(item.value);
+        option.textContent = t(item.label);
+        intervalHost.appendChild(option);
+      });
+    }
+    const burstHost = refs.simulationBurst;
+    if (burstHost && !burstHost.options.length) {
+      SIMULATION_BURSTS.forEach((count) => {
+        const option = document.createElement('option');
+        option.value = String(count);
+        option.textContent = String(count);
+        burstHost.appendChild(option);
+      });
+    }
   }
 
   function buildEvent(direction, bytes, displayText, extra = {}) {
@@ -6416,6 +6504,15 @@
         scriptId: SIMULATION_SCRIPT_IDS.includes(source.simulation?.scriptId)
           ? source.simulation.scriptId
           : state.settings.simulation.scriptId,
+        intervalMs: SIMULATION_INTERVALS.some((item) => item.value === Number(source.simulation?.intervalMs))
+          ? Number(source.simulation.intervalMs)
+          : state.settings.simulation.intervalMs,
+        burst: SIMULATION_BURSTS.includes(Number(source.simulation?.burst))
+          ? Number(source.simulation.burst)
+          : state.settings.simulation.burst,
+        template: typeof source.simulation?.template === 'string'
+          ? source.simulation.template.slice(0, SIMULATION_TEMPLATE_MAX)
+          : state.settings.simulation.template,
         timerId: 0,
         tick: 0
       }
@@ -6703,7 +6800,12 @@
         ...state.settings,
         simulation: {
           enabled: Boolean(state.settings.simulation?.enabled),
-          scriptId: state.settings.simulation?.scriptId || 'text-sensor'
+          scriptId: state.settings.simulation?.scriptId || 'text-sensor',
+          intervalMs: simulationIntervalMs(),
+          burst: SIMULATION_BURSTS.includes(Number(state.settings.simulation?.burst))
+            ? Number(state.settings.simulation.burst)
+            : SIMULATION_BURST_DEFAULT,
+          template: String(state.settings.simulation?.template || '').slice(0, SIMULATION_TEMPLATE_MAX)
         }
       },
       parser: snapshotParserGraphState(),
@@ -7878,6 +7980,36 @@
         startSimulation();
       }
       scheduleLocalPrefsSave();
+    });
+    /* Pacing changes restart the timer, because setInterval captured the old
+       period at creation time and changing the setting alone would not alter
+       the cadence. */
+    const restartSimulationTimer = () => {
+      if (!state.settings.simulation.enabled) return;
+      stopSimulation();
+      startSimulation();
+    };
+    refs.simulationInterval?.addEventListener('change', () => {
+      const value = Number(refs.simulationInterval.value);
+      if (SIMULATION_INTERVALS.some((item) => item.value === value)) {
+        state.settings.simulation.intervalMs = value;
+      }
+      restartSimulationTimer();
+      scheduleLocalPrefsSave();
+    });
+    refs.simulationBurst?.addEventListener('change', () => {
+      const value = Number(refs.simulationBurst.value);
+      state.settings.simulation.burst = SIMULATION_BURSTS.includes(value) ? value : SIMULATION_BURST_DEFAULT;
+      scheduleLocalPrefsSave();
+    });
+    refs.simulationTemplate?.addEventListener('input', () => {
+      state.settings.simulation.template = refs.simulationTemplate.value.slice(0, SIMULATION_TEMPLATE_MAX);
+      scheduleLocalPrefsSave();
+    });
+    refs.simulationConfigToggle?.addEventListener('click', () => {
+      const config = refs.simulationConfigToggle.closest('.simulation-config');
+      const open = config?.classList.toggle('is-open') ?? false;
+      refs.simulationConfigToggle.setAttribute('aria-expanded', String(open));
     });
     refs.layoutToggleBtn.addEventListener('click', toggleLayoutMode);
     refs.serialModeBtn?.addEventListener('click', toggleLayoutMode);

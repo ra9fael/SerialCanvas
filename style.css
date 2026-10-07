@@ -6325,3 +6325,58 @@ body.compact-single.layout-expanded .device-meta-stack {
   min-width: 92px;
   font-weight: 800;
 }
+
+/* Simulator pacing row. Collapsed by default so the parser results header
+   stays one line; the button expands it. */
+.simulation-config {
+  display: none;
+  flex: 1 1 100%;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.simulation-config.is-open {
+  display: flex;
+}
+
+.simulation-template-field {
+  flex: 1 1 200px;
+  min-width: 160px;
+}
+
+.simulation-template-field input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: calc(var(--control-h) - 2px);
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--bg-panel-strong);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.simulation-template-field input:focus {
+  outline: none;
+  border-color: var(--focus-ring-border);
+  box-shadow: var(--focus-ring);
+}
+
+/* A binary frame has no textual shape, so the template cannot apply. */
+.simulation-template-field.is-disabled {
+  opacity: 0.5;
+}
+
+.simulation-template-field.is-disabled input {
+  cursor: not-allowed;
+}
+
+.simulation-config-toggle {
+  flex: 0 0 auto;
+  height: var(--control-h);
+}
