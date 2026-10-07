@@ -50,6 +50,12 @@
   --warning: #b45309;
   --danger: #ae1800;
 
+  /* Simulator output. A separate hue from the accent so generated rows are
+     distinguishable from device rows without reading the text. Deliberately
+     not a status colour: violet reads as "synthetic", not as a severity. */
+  --sim-text: #6b4bb8;
+  --sim-soft: #e8e2f7;
+
   /* Overlays are the one place a shadow is load-bearing: they must float. */
   --shadow: 0 12px 32px rgba(32, 30, 29, 0.22);
   --shadow-soft: 0 3px 10px rgba(32, 30, 29, 0.16);
@@ -165,6 +171,11 @@ body.theme-dark {
   --signal: #ef6853;
   --warning: #ffb14d;
   --danger: #ff9783;
+
+  /* Lighter violet on the near-black ground; the light-theme value is too dark
+     to read there. */
+  --sim-text: #b9a2f0;
+  --sim-soft: #2f2745;
 
   --shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
   --shadow-soft: 0 3px 10px rgba(0, 0, 0, 0.40);
@@ -4231,19 +4242,30 @@ body.layout-expanded .monitor-live-meta {
   vertical-align: baseline;
 }
 
+/* Tag tones. The blue and green backgrounds were the old indigo literal; they
+   are --accent-soft now so they follow the accent. Violet is reserved for
+   simulator output, which is neither a preset nor a condition reply. */
 .preset-inline-tag.preset-tag-blue {
   color: var(--signal);
-  background: rgba(86, 114, 205, 0.10);
+  background: var(--accent-soft);
 }
 
 .preset-inline-tag.preset-tag-green {
   color: var(--accent-strong);
-  background: rgba(86, 114, 205, 0.12);
+  background: var(--accent-soft);
 }
 
 .preset-inline-tag.preset-tag-red {
   color: var(--danger);
-  background: rgba(194, 65, 12, 0.12);
+  background: var(--danger-soft, rgba(194, 65, 12, 0.12));
+}
+
+/* Simulator output. A distinct hue rather than a prefix on the RX label, so a
+   generated row is identifiable at a glance in a mixed log. */
+.preset-inline-tag.preset-tag-violet {
+  color: var(--sim-text);
+  background: var(--sim-soft);
+  letter-spacing: 0.06em;
 }
 
 .send-panel {
@@ -6128,4 +6150,28 @@ body.compact-single.layout-expanded .device-meta-stack {
 .sw-tooltip-link:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* Simulator status line: frame count plus the yield state, next to the
+   switch rather than in a toast that is gone by the time the log fills. */
+.simulation-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--bg-panel);
+  color: var(--text-soft);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Connected: the simulator is running but suppressed. This is a state the
+   user needs to notice, so it is tinted rather than merely worded. */
+.simulation-status.is-yielded {
+  border-color: var(--sim-text);
+  color: var(--sim-text);
+  background: var(--sim-soft);
 }

@@ -296,6 +296,7 @@
     parserPreview: document.getElementById('parser-preview'),
     simulationEnabled: document.getElementById('simulation-enabled'),
     simulationScript: document.getElementById('simulation-script'),
+    simulationStatus: document.getElementById('simulation-status'),
     addTimeChartBtn: document.getElementById('add-time-chart-btn'),
     addFftChartBtn: document.getElementById('add-fft-chart-btn'),
     addBarChartBtn: document.getElementById('add-bar-chart-btn'),
@@ -445,7 +446,10 @@
         enabled: false,
         scriptId: 'text-sensor',
         timerId: 0,
-        tick: 0
+        tick: 0,
+        // Cumulative frames emitted, shown next to the switch so a mixed log
+        // can be accounted for. Session-scoped, not persisted.
+        totalFrames: 0
       },
       rxDisplayMode: 'text',
       textEncoding: 'utf-8',

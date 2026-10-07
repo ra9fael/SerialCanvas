@@ -344,6 +344,11 @@
                   <span>脚本</span>
                   <select id="simulation-script"></select>
                 </label>
+                <!-- Frame count and the yield state, both readable at a glance.
+                     A transient toast is not enough: the question "is this a
+                     device or the simulator" has to be answerable while
+                     watching the log, not only when it was switched. -->
+                <span id="simulation-status" class="simulation-status" role="status"></span>
               </div>
               <button id="toggle-parser-results-btn" class="secondary-btn parser-results-toggle" type="button" aria-expanded="false">展开</button>
             </div>

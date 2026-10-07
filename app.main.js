@@ -52,11 +52,11 @@
         event = null;
       }
       if (!event) {
-        event = createRxEventFromSegment(chunkBytes, lineTimestamp, rawChunk.id || '');
+        event = createRxEventFromSegment(chunkBytes, lineTimestamp, rawChunk.id || '', metadata);
         state.serial.rxActiveEvent = event;
         state.session.liveEvents.push(event);
       } else {
-        appendRxSegmentToEvent(event, chunkBytes, lineTimestamp, rawChunk.id || '');
+        appendRxSegmentToEvent(event, chunkBytes, lineTimestamp, rawChunk.id || '', metadata);
       }
       if (shouldRollRxActiveEvent(event)) {
         finalizeLine(lineTimestamp, true);
@@ -143,6 +143,8 @@
     sim.tick += 1;
     if (sim.tick > SIMULATION_MAX_TICKS) sim.tick = 0;
     const payload = frame instanceof Uint8Array ? frame : encodeText(String(frame), state.settings.textEncoding);
+    sim.totalFrames += 1;
+    syncSimulationUi();
     queueRxBytes(payload, nowPreciseMs(), { source: 'serial-read', simulated: true });
   }
 
@@ -171,10 +173,27 @@
     }
   }
 
+  /* Frame counter and yield state.
+
+     A toast fired at switch-on is gone by the time the log fills, and the
+     question this answers — "are these rows from the device or from the
+     simulator" — recurs continuously while watching the log. So the state is
+     rendered next to the switch instead. */
   function syncSimulationUi() {
     const sim = state.settings.simulation;
     if (refs.simulationEnabled) refs.simulationEnabled.checked = sim.enabled;
     if (refs.simulationScript) refs.simulationScript.value = sim.scriptId;
+    if (!refs.simulationStatus) return;
+    const yielded = sim.enabled && state.serial.connected;
+    const parts = [];
+    if (sim.totalFrames > 0) {
+      parts.push(t('已产生 {{count}} 帧', { count: sim.totalFrames }));
+    }
+    if (yielded) {
+      parts.push(t('串口已连接，模拟让位'));
+    }
+    refs.simulationStatus.textContent = parts.join(' · ');
+    refs.simulationStatus.classList.toggle('is-yielded', yielded);
   }
 
   function syncBufferUi() {
@@ -481,6 +500,10 @@
       refs.connectBtn.textContent = t('连接设备 | 当前未连接');
     }
     updateSignalControlsUI();
+    // The simulation yield notice depends on the connection state, and this
+    // function runs on every status repaint - which is the one place guaranteed
+    // to fire on both connect and disconnect.
+    syncSimulationUi();
   }
 
   /* Three states, not two.
@@ -1883,8 +1906,20 @@
     return { text: t('触发：{{label}}', { label }), tone: 'green' };
   }
 
+  /* Marks rows the simulator produced.
+
+     The simulated flag was written into the event metadata by
+     emitSimulationFrame() and never read, so generated rows were visually
+     identical to device rows. For a feature whose entire purpose is
+     demonstrating the parser, that is the defect worth fixing: once the log is
+     full there is no way to tell which lines came from where. */
+  function getSimulatedMonitorTag(metadata = {}) {
+    if (!metadata?.simulated) return null;
+    return { text: t('SIM'), tone: 'violet' };
+  }
+
   function getMonitorInlineTags(metadata = {}) {
-    return [getPresetMonitorTag(metadata), getConditionMonitorTag(metadata)].filter(Boolean);
+    return [getSimulatedMonitorTag(metadata), getPresetMonitorTag(metadata), getConditionMonitorTag(metadata)].filter(Boolean);
   }
 
   /* Builds one log row as a detached element.
@@ -6303,7 +6338,8 @@
         : state.settings.terminalScrollback,
       // This function rebuilds the object field by field, so a new key has to be
       // listed here explicitly or the preference is silently dropped on reload.
-      // timerId / tick are runtime-only and always reset.
+      // timerId / tick / totalFrames are runtime-only and always reset — the
+      // frame count describes this browser session, not a preference.
       simulation: {
         enabled: Boolean(source.simulation?.enabled),
         scriptId: SIMULATION_SCRIPT_IDS.includes(source.simulation?.scriptId)
