@@ -602,34 +602,13 @@
 
             <section id="term-interaction" class="term-interaction" aria-label="终端交互模式">
               <div id="term-output" class="term-output" aria-label="串口终端，直接键入内容，回车发送" data-i18n-off></div>
-              <!-- Buttons send the exact byte sequences xterm would produce for the
-                   same keys, so behaviour cannot diverge from typing. They call
-                   sendTerminalKey() directly rather than synthesising keystrokes,
-                   which means they work without terminal focus. -->
-              <div class="term-key-bar" role="group" aria-label="快捷发送按键">
+              <!-- Built from TERM_KEY_GROUPS in app.terminal.js, so the bar and
+                   the byte table cannot drift. Static markup for 34 buttons
+                   would be unreadable and would duplicate every binding.
+                   Buttons call sendTerminalKey() directly rather than
+                   synthesising keystrokes, so they work without focus. -->
+              <div id="term-key-bar" class="term-key-bar" role="group" aria-label="快捷发送按键">
                 <span class="term-key-bar-label">按键</span>
-                <div class="term-key-bar-group">
-                  <button type="button" class="term-key" data-term-key="up" title="向上（历史）">↑</button>
-                  <button type="button" class="term-key" data-term-key="down" title="向下（历史）">↓</button>
-                </div>
-                <div class="term-key-bar-group">
-                  <button type="button" class="term-key" data-term-key="home" title="行首 (Home)">Home</button>
-                  <button type="button" class="term-key" data-term-key="end" title="行尾 (End)">End</button>
-                  <button type="button" class="term-key" data-term-key="delete" title="删除 (Delete)">Del</button>
-                  <button type="button" class="term-key" data-term-key="backspace" title="退格 (Backspace)">⌫</button>
-                </div>
-                <div class="term-key-bar-group">
-                  <button type="button" class="term-key" data-term-key="ctrl-u" title="清空输入行 (Ctrl-U)">^U</button>
-                  <button type="button" class="term-key" data-term-key="ctrl-w" title="删除前一个词 (Ctrl-W)">^W</button>
-                  <button type="button" class="term-key" data-term-key="ctrl-k" title="删除到行尾 (Ctrl-K)">^K</button>
-                </div>
-                <div class="term-key-bar-group">
-                  <button type="button" class="term-key term-key-control" data-term-key="ctrl-c" title="中断 (Ctrl-C / 0x03)">^C</button>
-                  <button type="button" class="term-key term-key-control" data-term-key="ctrl-d" title="文件结束 (Ctrl-D / 0x04)">^D</button>
-                  <button type="button" class="term-key term-key-control" data-term-key="ctrl-z" title="挂起 (Ctrl-Z / 0x1a)">^Z</button>
-                  <button type="button" class="term-key term-key-control" data-term-key="tab" title="制表符 (Tab / 0x09)">Tab</button>
-                  <button type="button" class="term-key term-key-control" data-term-key="escape" title="转义 (Esc / 0x1b)">Esc</button>
-                </div>
               </div>
             </section>
           </div>

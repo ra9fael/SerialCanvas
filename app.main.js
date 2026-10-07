@@ -7788,8 +7788,13 @@
     refs.termNewline?.addEventListener('change', () => {
       scheduleLocalPrefsSave();
     });
-    refs.termKeys?.forEach((button) => {
-      button.addEventListener('click', () => sendTerminalKey(button.dataset.termKey));
+    // Delegated, because the bar is built at runtime from TERM_KEY_GROUPS and a
+    // static NodeList would be captured before the buttons exist.
+    refs.termKeyBar?.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-term-key]');
+      if (!button || button.disabled) return;
+      event.preventDefault();
+      sendTerminalKey(button.dataset.termKey);
     });
     refs.monoSizePreset?.addEventListener('change', () => {
       const value = refs.monoSizePreset.value;
@@ -8336,6 +8341,7 @@
     renderExtensionButtons();
     renderExtensionPanel();
     renderShortcutSheet();
+    renderTerminalKeyBar();
     renderSendConfigLists('all');
     syncUserConfigMenuUi();
     syncVersionDisplay();
@@ -8446,6 +8452,7 @@
   });
 
   initializeDefaults();
+  renderTerminalKeyBar();
   attachEventListeners();
   installTooltip();
   trackSerialWebView();

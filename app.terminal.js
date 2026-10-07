@@ -342,25 +342,111 @@
      These are the exact sequences xterm reports through onData for the same
      keys, so a button and a keypress take the identical path through
      handleTermData(). Nothing here re-implements the echo/passthrough split or
-     the line editor. */
+     the line editor.
+
+     The Ctrl entries are single bytes, which is what makes a binding like ^R
+     meaningful over a serial line: it reaches the device as 0x12 and is
+     interpreted by whatever readline is running there — including fzf, where
+     ^R is reverse-i-search and ^T/^N/^P drive the selection. These are the
+     bytes, not browser keybindings, so the browser never sees them. */
   const TERM_KEY_SEQUENCES = {
+    // Navigation
     up: '\x1b[A',
     down: '\x1b[B',
     right: '\x1b[C',
     left: '\x1b[D',
     home: '\x1b[H',
     end: '\x1b[F',
+    pageup: '\x1b[5~',
+    pagedown: '\x1b[6~',
     delete: '\x1b[3~',
+    // Editing
     backspace: '\x7f',
+    'ctrl-h': '\x08',
+    'ctrl-a': '\x01',
+    'ctrl-e': '\x05',
+    'ctrl-b': '\x02',
+    'ctrl-f': '\x06',
+    'ctrl-k': '\x0b',
     'ctrl-u': '\x15',
     'ctrl-w': '\x17',
-    'ctrl-k': '\x0b',
-    'ctrl-c': '\x03',
+    'ctrl-t': '\x14',
+    'ctrl-y': '\x19',
     'ctrl-d': '\x04',
+    // History and completion — the fzf-facing group
+    'ctrl-r': '\x12',
+    'ctrl-p': '\x10',
+    'ctrl-n': '\x0e',
+    'ctrl-o': '\x0f',
+    'ctrl-l': '\x0c',
+    // Control bytes
+    'ctrl-c': '\x03',
     'ctrl-z': '\x1a',
+    'ctrl-g': '\x07',
+    'ctrl-v': '\x16',
+    'ctrl-x': '\x18',
     tab: '\t',
     escape: '\x1b'
   };
+
+  /* Button grouping for the key bar. Order matters: it is reading order, and
+     the control-byte group is last so the interrupt keys are not hit by
+     muscle memory while reaching for editing keys. */
+  const TERM_KEY_GROUPS = [
+    {
+      id: 'nav',
+      buttons: [
+        { key: 'up', label: '↑', tip: '↑ 上一个历史' },
+        { key: 'down', label: '↓', tip: '↓ 下一个历史' },
+        { key: 'left', label: '←', tip: '← 光标左移' },
+        { key: 'right', label: '→', tip: '→ 光标右移' },
+        { key: 'home', label: 'Home', tip: 'Home 行首' },
+        { key: 'end', label: 'End', tip: 'End 行尾' },
+        { key: 'pageup', label: 'PgUp', tip: 'PgUp 上翻一屏' },
+        { key: 'pagedown', label: 'PgDn', tip: 'PgDn 下翻一屏' }
+      ]
+    },
+    {
+      id: 'edit',
+      buttons: [
+        { key: 'backspace', label: 'Bksp', tip: 'Backspace 退格' },
+        { key: 'delete', label: 'Del', tip: 'Delete 删除' },
+        { key: 'ctrl-a', label: '^A', tip: '^A 行首' },
+        { key: 'ctrl-e', label: '^E', tip: '^E 行尾' },
+        { key: 'ctrl-b', label: '^B', tip: '^B 左移一字符' },
+        { key: 'ctrl-f', label: '^F', tip: '^F 右移一字符' },
+        { key: 'ctrl-k', label: '^K', tip: '^K 删到行尾' },
+        { key: 'ctrl-u', label: '^U', tip: '^U 删到行首' },
+        { key: 'ctrl-w', label: '^W', tip: '^W 删前一个词' },
+        { key: 'ctrl-t', label: '^T', tip: '^T 转置字符' },
+        { key: 'ctrl-y', label: '^Y', tip: '^Y 召回' }
+      ]
+    },
+    {
+      id: 'history',
+      buttons: [
+        { key: 'ctrl-r', label: '^R', tip: '^R 反向增量搜索（fzf 常用）' },
+        { key: 'ctrl-p', label: '^P', tip: '^P 上一条历史' },
+        { key: 'ctrl-n', label: '^N', tip: '^N 下一条历史' },
+        { key: 'ctrl-o', label: '^O', tip: '^O 轮换历史' },
+        { key: 'ctrl-l', label: '^L', tip: '^L 清屏' }
+      ]
+    },
+    {
+      id: 'control',
+      buttons: [
+        { key: 'ctrl-c', label: '^C', tip: '^C 中断前台进程（0x03）' },
+        { key: 'ctrl-d', label: '^D', tip: '^D EOF / 注销（0x04）' },
+        { key: 'ctrl-z', label: '^Z', tip: '^Z 挂起到后台（0x1A）' },
+        { key: 'ctrl-g', label: '^G', tip: '^G 中止' },
+        { key: 'ctrl-v', label: '^V', tip: '^V 引号插入' },
+        { key: 'ctrl-x', label: '^X', tip: '^X 切换转置' },
+        { key: 'tab', label: 'Tab', tip: 'Tab 制表符' },
+        { key: 'escape', label: 'Esc', tip: 'Esc ESC' }
+      ]
+    }
+  ];
+
 
   /* Buttons must work without the terminal holding focus, so this dispatches
      through handleTermData() rather than relying on xterm's onData. */
@@ -370,6 +456,43 @@
     flushTerminalKeyBuffer();
     handleTermData(sequence);
     scheduleLocalPrefsSave();
+  }
+
+  /* Builds the key bar from TERM_KEY_GROUPS.
+
+     One source for both the byte table and the buttons: a binding cannot exist
+     in the bar without a byte, or send bytes without a way to press them. The
+     control group gets the amber treatment because those bytes interrupt the
+     foreground process on the device — they are the ones worth reading twice
+     before clicking. */
+  function renderTerminalKeyBar() {
+    const bar = refs.termKeyBar;
+    if (!bar) return;
+    // Keep the label, drop anything a previous render produced.
+    Array.from(bar.children).forEach((node) => {
+      if (!node.classList.contains('term-key-bar-label')) node.remove();
+    });
+    TERM_KEY_GROUPS.forEach((group) => {
+      const groupEl = document.createElement('div');
+      groupEl.className = 'term-key-bar-group';
+      if (group.id === 'control') groupEl.classList.add('is-control');
+      groupEl.dataset.termGroup = group.id;
+      group.buttons.forEach((spec) => {
+        if (!TERM_KEY_SEQUENCES[spec.key]) return;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'term-key';
+        if (group.id === 'control') button.classList.add('term-key-control');
+        button.dataset.termKey = spec.key;
+        // Translated here rather than in the constant: TERM_KEY_GROUPS is
+        // evaluated once at load, so a t() call inside it would keep the
+        // language it was built in.
+        button.dataset.tip = t(spec.tip);
+        button.textContent = spec.label;
+        groupEl.appendChild(button);
+      });
+      bar.appendChild(groupEl);
+    });
   }
 
   /* ---- Paste debounce ---------------------------------------------------
