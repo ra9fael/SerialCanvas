@@ -197,7 +197,7 @@ Propose a direction once B1 lands, not before.
 picotty has `serialKeydown()` (`app.js:1429`) covering Enter, Backspace, Tab,
 Esc, `Ctrl-C` / `D` / `Z`, plus a 40 ms flush debounce.
 
-SerialWeb already has better: `term.onData(handleTermData)`
+SerialCanvas already has better: `term.onData(handleTermData)`
 (`app.terminal.js:197`) gives every key xterm-native, so function keys and
 arrows already work **inside the terminal**. What is missing is *discoverable
 buttons* — you have to know the keys exist.
@@ -335,11 +335,11 @@ Assessed against what already exists:
 
 | Idea | Verdict |
 | --- | --- |
-| **Custom tooltip singleton** | **Do it.** `app.js:64`–`132`. SerialWeb has 2 `help-icon` elements and 15 `title=` attributes. Native `title=` cannot host a link, and the existing CSS `::after` bubble cannot either. The singleton can carry a "Learn more" link and is the natural home for a shortcut-sheet link. It also fixes discoverability for C1 and B2 at zero extra cost. |
-| **Prompt / target state badge** | Skip. picotty's badge answers "is the node alive / is the target machine up" — a fleet concept. SerialWeb has one port; the status pill already carries this. |
+| **Custom tooltip singleton** | **Do it.** `app.js:64`–`132`. SerialCanvas has 2 `help-icon` elements and 15 `title=` attributes. Native `title=` cannot host a link, and the existing CSS `::after` bubble cannot either. The singleton can carry a "Learn more" link and is the natural home for a shortcut-sheet link. It also fixes discoverability for C1 and B2 at zero extra cost. |
+| **Prompt / target state badge** | Skip. picotty's badge answers "is the node alive / is the target machine up" — a fleet concept. SerialCanvas has one port; the status pill already carries this. |
 | **Offline send queue** | Consider. If C3 lands, a queue lets you type commands while the simulated or real device is reconnecting. Depends on C3. |
 | **Session replay (asciicast)** | Defer. Pairs with the `.cast` half of C2; neither is useful alone. |
-| **Macro / runbook system** | Skip. SerialWeb's preset send already covers the single-shot case; runbooks are a YAML orchestration layer SerialWeb has no use for. |
+| **Macro / runbook system** | Skip. SerialCanvas's preset send already covers the single-shot case; runbooks are a YAML orchestration layer SerialCanvas has no use for. |
 | **Firmware OTA** | Skip. Pico-specific. |
 | **Control byte strip** | Covered by C1. |
 

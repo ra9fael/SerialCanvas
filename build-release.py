@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Build a single-file release of SerialWeb.
+"""Build a single-file release of SerialCanvas.
 
 Inlines every referenced local asset (style.css, bootstrap.js, vendor/xterm/*,
 app.core.js, app.terminal.js, app.main.js) into index.html and writes the
-output to dist/SerialWeb.html. The produced file runs standalone from file://.
+output to dist/SerialCanvas.html. The produced file runs standalone from file://.
 
 JS chunks are concatenated (they share one IIFE closure) and minified with
 esbuild (node_modules/.bin or PATH); the escaped result is then inlined.
@@ -30,7 +30,7 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DIST = os.path.join(ROOT, 'dist')
-OUTPUT = os.path.join(DIST, 'SerialWeb.html')
+OUTPUT = os.path.join(DIST, 'SerialCanvas.html')
 
 INLINE_ASSETS = [
     ('<link rel="stylesheet" href="style.css">', 'style.css', 'style'),

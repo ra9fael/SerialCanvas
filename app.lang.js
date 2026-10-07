@@ -1,5 +1,5 @@
 /* --------------------------------------------------------------------------
- * SerialWeb locale data.
+ * SerialCanvas locale data.
  *
  * Standalone script on purpose: it is not part of the shared app closure, so it
  * can be loaded before the app chunks and stays readable on its own. Keys are
@@ -47,14 +47,9 @@
     '许可证': 'License',
     '查看 AGPL-3.0 许可证': 'Read the AGPL-3.0 license',
     '串口监视与图形解析工具': 'Serial monitor and graph parsing tool',
-    '分叉来源': 'Fork provenance',
-    'SerialWeb 由电导实验室（Conductance-lab）创作，本仓库是它的独立分叉；分叉点之前的代码归原作者，两者一律按 AGPL-3.0 授权。': 'SerialWeb was created by Conductance-lab. This repository is an independent fork of it: the code before the divergence point belongs to the original author, and both are offered under AGPL-3.0.',
-    '分叉自上游 v1.6（提交 e3f9200814，2026/9/6），即本仓库的 v0.1.0。': 'Forked from upstream v1.6 (commit e3f9200814, 2026/9/6), which is v0.1.0 of this repository.',
-    '原作者主页': 'Author home page',
-    '上游仓库': 'Upstream repo',
-    '上游在线版本': 'Upstream online',
-    '上游工具手册': 'Upstream manual',
-    '原始反馈表单': 'Original feedback form',
+    '来源与致谢': 'Origin & credits',
+    'SerialCanvas 的前身是电导实验室（Conductance-lab）的 SerialWeb（上游 v1.6，提交 e3f9200814，2026/9/6），界面设计另借鉴了 PICOTTY（morpheuslord）。本项目已独立发展，按 AGPL-3.0 授权，原始代码版权归原作者。': 'SerialCanvas started as SerialWeb by Conductance-lab (upstream v1.6, commit e3f9200814, 2026/9/6); the UI design also borrows from PICOTTY by morpheuslord. The project has since developed independently, is offered under AGPL-3.0, and the original code remains credited to its author.',
+    '原始项目': 'Original project',
     '关于 v{{version}}': 'About v{{version}}',
     '更新日志': 'Changelog',
     '关闭版本信息': 'Close version info',
@@ -63,9 +58,9 @@
     '最新在线版本': 'Latest online version',
     '当前在线最新': 'Already the latest',
     '在线版本 v{{version}}': 'Online v{{version}}',
-    'SerialWeb 在线版本 v{{version}}': 'SerialWeb Online v{{version}}',
+    'SerialCanvas 在线版本 v{{version}}': 'SerialCanvas Online v{{version}}',
     '离线版本 v{{version}}': 'Offline v{{version}}',
-    'SerialWeb 离线版本 v{{version}}': 'SerialWeb Offline v{{version}}',
+    'SerialCanvas 离线版本 v{{version}}': 'SerialCanvas Offline v{{version}}',
     '访问在线模式': 'Switch to online mode',
     '打开在线版本': 'Open the online version',
     '当前已是在线版本': 'You are on the online version',
@@ -226,8 +221,8 @@
     '实时解析结果': 'Live parse results',
     '模拟数据': 'Simulate',
     '模拟数据源': 'Simulated source',
-    '模拟中 · {{count}} 帧': 'Simulating · {{count}} frames',
-    '模拟已让位 · {{count}} 帧': 'Simulator yielded · {{count}} frames',
+    '模拟中': 'Simulating',
+    '模拟已让位': 'Simulator yielded',
     '已产生 {{count}} 帧': '{{count}} frames emitted',
     '串口已连接，模拟让位': 'Serial port connected; simulation yields',
     'SIM': 'SIM',
@@ -533,11 +528,16 @@
     '行类型（按表格下拉顺序）： • 帧头 — 帧起始标识，16进制 留空则跳过 • 帧尾 — 帧结束标识，16进制 留空则不检查帧尾 • 数据 — 数值数据，需选择 数据类型 + 填写标签名 • 校验和 — 自动计算 SUM8 仅覆盖 data 行的字节 • 间隔符 — 留空占位 1 字节 填入则匹配指定16进制 数值大小端说明： LE = Little Endian（低位在前） BE = Big Endian（高位在前） 可用数据类型： UInt8 / Int8 UInt16 LE/BE / Int16 LE/BE UInt32 LE/BE / Int32 LE/BE Float32 LE/BE / Bool(8bit)': 'Row types (in the order of the table drop-downs): • Header — frame start, hexadecimal, leave empty to skip • Footer — frame end, hexadecimal, leave empty to skip the check • Data — numeric value, needs a data type plus a label • Checksum — SUM8 computed automatically over the Data rows only • Gap — empty means one placeholder byte, filled means match that byte Endianness: LE = Little Endian (low byte first) BE = Big Endian (high byte first) Data types: UInt8 / Int8 UInt16 LE/BE / Int16 LE/BE UInt32 LE/BE / Int32 LE/BE Float32 LE/BE / Bool(8bit)',
 
     /* Changelog: feature blurbs per release */
+    'v0.4.0 版本 · 26/10/8': 'v0.4.0 · 26/10/8',
+    '项目更名为 SerialCanvas：本项目从 SerialWeb v1.6 出发、此后独立发展，因此不再使用 fork 的表述。 docs/fork.md 更名为来源与致谢，关于弹窗只保留原始项目链接，UI 借鉴说明同时 写入 PICOTTY。构建产物（dist/SerialCanvas.html）、 离线包文件名与 Pages 工作流一并随新名；AGPL-3.0 与原始版权不变。': 'The project is renamed SerialCanvas: it started from SerialWeb v1.6 and has developed independently, so the fork framing is retired. docs/fork.md becomes origin & credits, the About dialog keeps only the original repo link, and the UI credit now also names PICOTTY. The build output (dist/SerialCanvas.html), the offline download filename and the Pages workflow follow the new name; AGPL-3.0 and the original copyright are unchanged.',
+    '☰ 菜单的三组分段按钮（主题 / 语言 / 圆角）现在共享同一套样式：此前两处 CSS :not() 列表漏掉了 .menu-corner-opt，圆角按钮被当成列表按钮排版（36px 高、带通用 hover 底色）而非分段按钮。': 'The three ☰-menu segmented rows (theme / language / corner) now share one style: two CSS :not() lists forgot .menu-corner-opt, so the corner buttons were laid out as list buttons (36px tall, generic hover background) instead of segmented ones.',
+    '监视工具栏的模拟状态芯片只在手动收发子视图显示，并去掉帧数——它只回答「这批数据是不是模拟的」， 收到多少 RX 计数本来就在说。': 'The simulation chip in the monitor toolbar shows only in the manual sub-view and drops the frame count — it answers "is this stream real", and the RX counter already says how much.',
+    '监视工具栏改为固定两行（标题与操作 / 全部参数字段），取代 1280px 换行、1440px 终端控件独占一行、 1560px 藏标签这三套补丁；常见窗口宽度下标签不再被截断。': 'The monitor toolbar is a fixed two-row layout (identity and actions / parameter fields), replacing the 1280px wrap, 1440px term break and 1560px label-hide patches; labels no longer truncate at common window widths.',
     'v0.3.0 版本 · 26/10/1': 'v0.3.0 · 26/10/1',
     '界面现在明确标注分叉身份：关于弹窗写清上游项目、分叉提交（e3f9200814，上游 v1.6，2026/9/6）以及各处构建的托管位置；☰ 菜单与弹窗里的链接改为指向本仓库，不再指向原作者的主机。': 'The interface now states that this is a fork: the About dialog names the upstream project, the divergence commit (e3f9200814, upstream v1.6, 2026/9/6) and where each build lives, and the ☰ menu and dialog links point at this repository instead of the original author\'s host.',
-    '关于弹窗新增许可证一行，仓库补上 LICENSE：SerialWeb 采用上游声明的 AGPL-3.0 许可证。': 'Added a License row to the About dialog plus a LICENSE file: SerialWeb is AGPL-3.0, the license the upstream project declares.',
+    '关于弹窗新增许可证一行，仓库补上 LICENSE：SerialCanvas 采用上游声明的 AGPL-3.0 许可证。': 'Added a License row to the About dialog plus a LICENSE file: SerialCanvas is AGPL-3.0, the license the upstream project declares.',
     '线上构建不再发送上游的页面访问统计——该请求只在原作者的主机上发出，因此 GitHub Pages 或 localhost 部署不会产生统计请求。': 'The hosted build no longer sends the upstream page-view request — it fires only on the original author\'s host, so a GitHub Pages or localhost deployment makes no analytics call.',
-    '新增 GitHub Actions 工作流：构建 dist/SerialWeb.html 并作为 index.html 发布到 GitHub Pages。': 'Added a GitHub Actions workflow that builds dist/SerialWeb.html and publishes it to GitHub Pages as index.html.',
+    '新增 GitHub Actions 工作流：构建 dist/SerialCanvas.html 并作为 index.html 发布到 GitHub Pages。': 'Added a GitHub Actions workflow that builds dist/SerialCanvas.html and publishes it to GitHub Pages as index.html.',
     '文档：新增中英双语的分叉来源，并用 tools/docs-check.py 校验文档链接、标题锚点与中英镜像。': 'Documentation: new fork provenance page in both languages, and tools/docs-check.py verifies doc links, heading anchors and the English/Chinese mirror.',
     'v0.2.0 版本 · 26/10/1': 'v0.2.0 · 26/10/1',
     '新增语言切换：系统菜单 ☰ 中提供 中文 / English / 跟随系统。切换即时生效、无需刷新并会被保存；只有界面会被翻译，已捕获的日志行与终端历史保持写入时的语言。': 'Added language switching: 中文 / English / Follow system in the system menu (☰). The choice is applied instantly, needs no reload and persists; only the interface is translated, captured log lines and terminal history keep the language they were written in.',

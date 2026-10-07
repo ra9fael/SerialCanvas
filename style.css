@@ -980,7 +980,7 @@ body.runtime-local #download-local-link {
   display: block;
 }
 
-.floating-menu button:not(.menu-theme-opt):not(.menu-lang-opt),
+.floating-menu button:not(.menu-theme-opt):not(.menu-lang-opt):not(.menu-corner-opt),
 .floating-menu a,
 .floating-menu .menu-placeholder {
   width: 100%;
@@ -1238,8 +1238,8 @@ body.theme-dark .floating-menu .menu-config-line button.danger-btn:hover {
   line-height: 1.3;
 }
 
-.floating-menu button:not(.menu-theme-opt):not(.menu-lang-opt):hover,
-.floating-menu button:not(.menu-theme-opt):not(.menu-lang-opt):focus-visible {
+.floating-menu button:not(.menu-theme-opt):not(.menu-lang-opt):not(.menu-corner-opt):hover,
+.floating-menu button:not(.menu-theme-opt):not(.menu-lang-opt):not(.menu-corner-opt):focus-visible {
   background: var(--accent-soft);
 }
 
@@ -4170,10 +4170,26 @@ body.theme-dark .chart-axis-binding-option {
 
 .monitor-toolbar {
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Row 1: identity and actions (title/chip/meta, view switch, export/clear).
+   Row 2: every parameter field. Both nowrap — the split is what keeps each
+   row short enough to afford nowrap, not compression policy. */
+.monitor-toolbar-row {
+  display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
   flex-wrap: nowrap;
-  align-items: center;
+  min-width: 0;
+}
+
+/* Parameters flow left; there is no reason to spread fields across the row. */
+.monitor-toolbar-params {
+  justify-content: flex-start;
+  gap: 8px;
 }
 
 .monitor-toolbar-copy {
@@ -5822,34 +5838,13 @@ body.compact-single.layout-expanded .device-meta-stack {
   display: none;
 }
 
-/* Four toolbars share one nowrap row, so at 1280px they stacked to five lines
-   and ate the terminal's height. Letting each toolbar's fields shrink keeps the
-   row to one line; the labels are the first thing to go, and the checkbox
-   labels survive because a bare checkbox would be unreadable. */
+/* Four toolbars share the second row, so the fields shrink before the row
+   wraps; the labels are the first thing to go, and the checkbox labels survive
+   because a bare checkbox would be unreadable. */
 #mono-size-control,
 #buffer-toolbar-controls {
   flex: 0 1 auto;
   min-width: 0;
-}
-
-/* The terminal toolbar has the most fields (line ending, font, size, skin,
-   echo, buffer, log). Below 1440 it gets its own line rather than pushing the
-   rest of the row into a stack. */
-@media (max-width: 1440px) {
-  #term-toolbar-controls {
-    flex: 1 0 100%;
-    order: 10;
-  }
-}
-
-/* The terminal toolbar has the most fields (line ending, font, size, skin,
-   echo, buffer, log). Below 1440 it gets its own line rather than pushing the
-   rest of the row into a stack. */
-@media (max-width: 1440px) {
-  #term-toolbar-controls {
-    flex: 1 0 100%;
-    order: 10;
-  }
 }
 
 #term-toolbar-controls {
@@ -5857,7 +5852,7 @@ body.compact-single.layout-expanded .device-meta-stack {
   min-width: 0;
 }
 
-@media (max-width: 1560px) {
+@media (max-width: 1100px) {
   #term-toolbar-controls .term-field > span,
   #mono-size-control .term-field > span,
   #buffer-toolbar-controls .term-field > span {
@@ -5870,20 +5865,9 @@ body.compact-single.layout-expanded .device-meta-stack {
   }
 }
 
-@media (max-width: 1280px) {
-  .monitor-panel .monitor-toolbar {
-    flex-wrap: wrap;
-  }
-}
-
-/* Manual-mode parameters live in a parallel toolbar, shown only in manual view.
-   The terminal keeps its own newline control: #newline-mode and #term-newline
-   are separate settings with separate consumers.
-
-   The labels are deliberately short. Six controls plus the mode switch and the
-   title do not fit on one row at 1440px, and the toolbar does not wrap
-   (.monitor-toolbar is nowrap), so a long label pushes the last control onto a
-   second line and leaves the row ragged. */
+/* Manual-mode parameters live in the toolbar's second row, shown only in
+   manual view. The terminal keeps its own newline control: #newline-mode and
+   #term-newline are separate settings with separate consumers. */
 .monitor-panel.view-terminal #manual-toolbar-controls {
   display: none;
 }
@@ -5894,9 +5878,9 @@ body.compact-single.layout-expanded .device-meta-stack {
   gap: 4px;
 }
 
-/* When the row runs out of room the controls compress rather than wrap:
-   .monitor-toolbar is nowrap, so a wrapped control would leave the row ragged
-   and push the title/meta out of alignment. Labels shorten before padding does. */
+/* When the row runs out of room the controls compress rather than wrap: the
+   params row is nowrap, so a wrapped control would leave the row ragged.
+   Labels shorten before padding does. */
 #manual-toolbar-controls .term-field {
   padding: 0 7px;
   gap: 4px;

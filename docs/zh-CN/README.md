@@ -1,6 +1,6 @@
-# SerialWeb
+# SerialCanvas
 
-SerialWeb 是一款基于 Web Serial API 的浏览器串口调试与数据绘图工具。它交付为
+SerialCanvas 是一款基于 Web Serial API 的浏览器串口调试与数据绘图工具。它交付为
 **单个 HTML 文件**，没有服务器、不需要安装、不依赖 CDN，因此可以从本地磁盘、U 盘或网页里
 直接运行。
 
@@ -13,13 +13,13 @@ SerialWeb 是一款基于 Web Serial API 的浏览器串口调试与数据绘图
 - **时间线录制** —— 把一次会话录制为原始字节，冻结实时视图，拖动与回放已归档的抓取，
   并以 `.bin` / `.csv` / `.txt` 导出导入。
 
-当前版本：**v0.3.0**。本分叉的主页：
-<https://ra9fael.github.io/SerialWeb/> ·
-<https://github.com/ra9fael/SerialWeb>
+当前版本：**v0.4.0**。本分叉的主页：
+<https://ra9fael.github.io/SerialCanvas/> ·
+<https://github.com/ra9fael/SerialCanvas>
 
-SerialWeb 由 [电导实验室（Conductance-lab）](https://conductance-lab.xyz) 创作，本仓库是
-<https://github.com/Conductance-lab/SerialWeb> 的分叉，基线取到上游 `v1.6`；原作者自己的在线版本在
-<https://conductance-lab.xyz/SerialWeb/>。详情见[分叉来源](fork.md)。
+SerialCanvas 的前身是[电导实验室（Conductance-lab）](https://conductance-lab.xyz)的
+<https://github.com/Conductance-lab/SerialWeb>（基线取到上游 `v1.6`），此后独立发展——已不再是 fork。
+界面设计另借鉴了 [PICOTTY](https://github.com/morpheuslord/PICOTTY)。详情见[来源与致谢](acknowledgements.md)。
 
 > 界面支持中英双语：在 ☰ 系统菜单里选择 **中文 / English / 跟随系统**，首次打开时跟随浏览器语言。
 > 本套中文文档里的界面控件一律按屏幕上的实际文字书写。英文文档与本套中文文档逐文件对应：[../README.md](../README.md)。
@@ -35,7 +35,7 @@ SerialWeb 由 [电导实验室（Conductance-lab）](https://conductance-lab.xyz
 | [数据格式](data-formats.md) | `localStorage` 键、配置快照结构、时间线 BIN/TXT/CSV 布局、解析结果导出 |
 | [开发指南](development.md) | 仓库结构、共享闭包约束、构建脚本、发布 |
 | [更新日志](CHANGELOG.md) | 各版本更新说明 |
-| [分叉来源](fork.md) | 原始项目、分叉点、本分叉新增内容、许可证 |
+| [来源与致谢](acknowledgements.md) | 原始项目、UI 借鉴（SerialWeb、PICOTTY）、许可证 |
 
 ## 运行要求
 
@@ -49,26 +49,26 @@ Web Serial 只在**安全上下文**中可用，而且目前只有 Chromium 系�
 | 权限 | 无需。端口由浏览器从操作系统取得。 |
 | 存储 | 设置保存在 `localStorage`；导入配置时应用还会读取剪贴板。 |
 
-用 `file://` 直接打开 `dist/SerialWeb.html` 可以正常使用界面，但浏览器不会在 `file://`
+用 `file://` 直接打开 `dist/SerialCanvas.html` 可以正常使用界面，但浏览器不会在 `file://`
 页面授予串口权限——需要连接设备时，请按下面的方式提供 HTTP 服务。
 
 ## 快速开始
 
 **1 —— 使用在线版本（最省事）。** 打开
-<https://ra9fael.github.io/SerialWeb/> —— 本仓库由 GitHub Actions 发布的单文件构建。
+<https://ra9fael.github.io/SerialCanvas/> —— 本仓库由 GitHub Actions 发布的单文件构建。
 [上游原作者的构建](https://conductance-lab.xyz/SerialWeb/) 是另一个程序，版本号各自独立。
 
 **2 —— 或在本地运行单文件构建。**
 
 ```sh
-python build-release.py            # -> dist/SerialWeb.html
+python build-release.py            # -> dist/SerialCanvas.html
 ```
 
-取出自包含的 `dist/SerialWeb.html`，然后直接双击打开（只能用界面，无法访问串口），
+取出自包含的 `dist/SerialCanvas.html`，然后直接双击打开（只能用界面，无法访问串口），
 或者把整个目录提供服务：
 
 ```sh
-python -m http.server 8000         # -> http://localhost:8000/dist/SerialWeb.html
+python -m http.server 8000         # -> http://localhost:8000/dist/SerialCanvas.html
 ```
 
 **3 —— 或从源码运行。** 仓库就是一组普通静态文件，任何静态服务器都能用。
@@ -102,21 +102,15 @@ python -m http.server 8000         # -> http://localhost:8000/
 ## 离线副本
 
 系统菜单（右上角的 ☰）里有 **下载离线版到本地**。通过 HTTP 访问时，应用会重新抓取自身
-资源，交给你一个自包含的 HTML 文件，与 `dist/SerialWeb.html` 等价。在 `file://` 副本中
+资源，交给你一个自包含的 HTML 文件，与 `dist/SerialCanvas.html` 等价。在 `file://` 副本中
 该功能不可用。
 
 ## 反馈
 
-- 本分叉的源码、issue 与功能需求：<https://github.com/ra9fael/SerialWeb>
+- 源码、issue 与功能需求：<https://github.com/ra9fael/SerialCanvas>
 - 手册：就是本套文档 —— 应用的 ☰ 菜单与关于弹窗也链接到这里。
 
-## 上游项目
+## 原始项目
 
-本仓库是一个分叉，分叉点与许可证见[分叉来源](fork.md)。原作者自己的页面：
-
-- 仓库：<https://github.com/Conductance-lab/SerialWeb>
-- 在线版本：<https://conductance-lab.xyz/SerialWeb/> ·
-  GitHub Pages：<https://conductance-lab.github.io/SerialWeb/>
-- 手册与教程：<https://docs.conductance-lab.xyz/工具手册/SerialWeb工具手册>
-- 问题反馈：<https://docs.qq.com/form/page/DU1B2RWVyZnJERHdq>
-- 作者主页：<https://conductance-lab.xyz>
+SerialCanvas 从 SerialWeb 出发、此后独立发展，沿革与许可证见[来源与致谢](acknowledgements.md)。
+原始项目在 <https://github.com/Conductance-lab/SerialWeb>。

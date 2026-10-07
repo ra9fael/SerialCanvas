@@ -1,6 +1,6 @@
 'use strict';
 /* ============================================================================
- * SerialWeb - terminal mode (part 2 of 3)
+ * SerialCanvas - terminal mode (part 2 of 3)
  * xterm.js based terminal interaction mode: raw byte passthrough, optional
  * local echo/line editing, skins, fonts and view switching. Continues the
  * IIFE opened in app.core.js.
@@ -744,5 +744,8 @@
     if (state.ui.monitorView === next) return;
     state.ui.monitorView = next;
     applyMonitorView();
+    // The simulation chip is manual-view only; switching sub-views changes
+    // whether it applies, so refresh it with the rest of the toolbar.
+    applySimulationMonitorChip();
     scheduleLocalPrefsSave();
   }

@@ -42,7 +42,7 @@ jobs:
         run: python build-release.py
 
       - name: Publish index.html at the site root
-        run: cp dist/SerialWeb.html dist/index.html
+        run: cp dist/SerialCanvas.html dist/index.html
 
       - uses: actions/upload-pages-artifact@v3
         with:

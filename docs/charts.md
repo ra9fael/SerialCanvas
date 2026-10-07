@@ -93,7 +93,7 @@ The spectrum is computed from the chart's own re-sampled series:
 6. Bin *k* sits at `k × sampleRate / n`; the axis ends at the Nyquist frequency.
 
 The **sample rate** is `1000 / frame interval`. The interval comes from 帧间隔 ms if set,
-otherwise SerialWeb estimates it: frames sharing a timestamp are batched, the batch gap is
+otherwise SerialCanvas estimates it: frames sharing a timestamp are batched, the batch gap is
 divided by the batch's frame count, and the estimate is smoothed with an EMA
 (`0.25 previous + 0.75 new`, kept when the drift is under 0.2 %). With nothing to measure it
 falls back to 1 Hz.

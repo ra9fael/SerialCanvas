@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SerialWeb</title>
+  <title>SerialCanvas</title>
 <script src="bootstrap.js"></script>
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="vendor/xterm/xterm.css">
 </head>
 <body spellcheck="false">
   <script>
-    window.__applySerialWebInitialBodyClasses?.();
+    window.__applySerialCanvasInitialBodyClasses?.();
   </script>
   <div class="app-shell">
     <header id="app-topbar" class="topbar">
@@ -18,7 +18,7 @@
         <div class="status-pill">
           <span id="serial-status-dot" class="status-dot warn"></span>
           <div class="status-pill-copy">
-            <span class="status-pill-title">SerialWeb</span>
+            <span class="status-pill-title">SerialCanvas</span>
             <span id="serial-status-text" class="status-pill-subtitle" data-hover="展开/折叠连接管理">串口离线</span>
           </div>
           <div id="logo-mode-switch" class="logo-mode-switch" aria-label="模式切换">
@@ -127,10 +127,10 @@
                 <button id="cancel-user-config-btn" type="button">取消</button>
               </div>
               <div class="menu-link-row">
-                <a href="https://github.com/ra9fael/SerialWeb/issues" target="_blank" rel="noreferrer">问题反馈</a>
-                <a href="https://github.com/ra9fael/SerialWeb/blob/main/docs/README.md" target="_blank" rel="noreferrer">工具手册</a>
+                <a href="https://github.com/ra9fael/SerialCanvas/issues" target="_blank" rel="noreferrer">问题反馈</a>
+                <a href="https://github.com/ra9fael/SerialCanvas/blob/main/docs/README.md" target="_blank" rel="noreferrer">工具手册</a>
               </div>
-              <a id="download-local-link" href="index.html" download="SerialWeb串口调试.html">下载离线版到本地</a>
+              <a id="download-local-link" href="index.html" download="SerialCanvas串口调试.html">下载离线版到本地</a>
             </div>
           </div>
         </div>
@@ -468,18 +468,25 @@
       <section class="right-column">
         <section class="panel monitor-panel">
           <div class="monitor-toolbar">
+            <!-- Fixed two rows, same decision as the terminal key bar. One
+                 nowrap row of ten controls truncated labels ("按键 HB: NaN")
+                 and still ran out of room; adaptive fixes (a 1280px wrap, a
+                 1440px term-toolbar break, a 1560px label hide) each patched
+                 one width and fought each other. Row 1 is identity and
+                 actions, row 2 is every parameter field, at every width. -->
+            <div class="monitor-toolbar-row monitor-toolbar-main">
             <div class="monitor-toolbar-copy">
               <div class="panel-title">串口监视器</div>
-              <!-- Read-only, and only in the monitor view. The simulator itself
-                   lives in the parse view, but the bytes it produces arrive
-                   here — so "is this data real or generated" has to be
-                   answerable while watching the log, not only after a tab
-                   switch. It sits with the Mode/TX/RX meta rather than among
-                   the controls: it is state, not something to operate, and the
-                   toolbar does not wrap, so a chip in the button row squeezes
-                   its neighbours (it clipped "Append LF" to "Ap"). Not a
-                   control either — one switch for the simulator, in the parse
-                   view, is the point. -->
+              <!-- Read-only, and only in the monitor view's manual sub-view.
+                   The simulator itself lives in the parse view, but the bytes
+                   it produces arrive here — so "is this data real or
+                   generated" has to be answerable while watching the log, not
+                   only after a tab switch. The terminal sub-view stays clean: a
+                   status line inside a terminal emulator reads as program
+                   output. It sits with the Mode/TX/RX meta rather than among
+                   the controls: it is state, not something to operate, and it
+                   carries no frame count — the RX counter already says how
+                   much arrived, and the chip answers one question. -->
               <span id="simulation-monitor-chip" class="simulation-monitor-chip" role="status" hidden></span>
               <div id="monitor-live-meta" class="device-meta-stack monitor-live-meta">
                 <div class="device-meta-line" data-meta="mode">
@@ -500,6 +507,12 @@
               <button class="mode-tab active" data-monitor-view="manual" type="button">手动收发</button>
               <button class="mode-tab" data-monitor-view="terminal" type="button">终端</button>
             </div>
+            <div class="button-row monitor-log-actions">
+              <button id="export-log-btn" class="secondary-btn" title="把当前日志导出为文本文件">导出日志</button>
+              <button id="clear-live-log-btn" class="secondary-btn">清空缓存</button>
+            </div>
+            </div>
+            <div class="monitor-toolbar-row monitor-toolbar-params">
             <div id="manual-toolbar-controls" class="term-toolbar-controls">
               <label class="term-field" title="收发使用的字符编码">
                 <span>编码</span>
@@ -615,9 +628,6 @@
                 <span>回显</span>
               </label>
             </div>
-            <div class="button-row">
-              <button id="export-log-btn" class="secondary-btn" title="把当前日志导出为文本文件">导出日志</button>
-              <button id="clear-live-log-btn" class="secondary-btn">清空缓存</button>
             </div>
           </div>
           <div class="monitor-body">
@@ -745,7 +755,7 @@
     <section class="version-modal" role="dialog" aria-modal="true" aria-labelledby="version-modal-title">
       <div class="version-modal-head">
         <div>
-          <div id="version-modal-title" class="version-modal-title">SerialWeb</div>
+          <div id="version-modal-title" class="version-modal-title">SerialCanvas</div>
           <div class="version-modal-subtitle">串口监视与图形解析工具</div>
         </div>
         <button id="version-modal-close" class="version-modal-close" type="button" aria-label="关闭版本信息">
@@ -760,43 +770,43 @@
           <strong>当前版本</strong>
           <span id="version-current-label">—</span>
           <strong>工具手册</strong>
-          <span><a href="https://github.com/ra9fael/SerialWeb/blob/main/docs/README.md" target="_blank" rel="noreferrer">查看工具手册</a></span>
+          <span><a href="https://github.com/ra9fael/SerialCanvas/blob/main/docs/README.md" target="_blank" rel="noreferrer">查看工具手册</a></span>
           <strong>问题反馈</strong>
-          <span><a href="https://github.com/ra9fael/SerialWeb/issues" target="_blank" rel="noreferrer">提交问题反馈</a></span>
+          <span><a href="https://github.com/ra9fael/SerialCanvas/issues" target="_blank" rel="noreferrer">提交问题反馈</a></span>
           <strong>源码仓库</strong>
-          <span><a href="https://github.com/ra9fael/SerialWeb" target="_blank" rel="noreferrer">查看 github 项目</a></span>
+          <span><a href="https://github.com/ra9fael/SerialCanvas" target="_blank" rel="noreferrer">查看 github 项目</a></span>
           <strong>许可证</strong>
-          <span><a href="https://github.com/ra9fael/SerialWeb/blob/main/LICENSE" target="_blank" rel="noreferrer">查看 AGPL-3.0 许可证</a></span>
+          <span><a href="https://github.com/ra9fael/SerialCanvas/blob/main/LICENSE" target="_blank" rel="noreferrer">查看 AGPL-3.0 许可证</a></span>
         </div>
         <div id="version-online-box" class="version-online-box">
           <strong>最新在线版本</strong>
           <span>GitHub Pages</span>
-          <a href="https://ra9fael.github.io/SerialWeb/" target="_blank" rel="noreferrer">https://ra9fael.github.io/SerialWeb/</a>
+          <a href="https://ra9fael.github.io/SerialCanvas/" target="_blank" rel="noreferrer">https://ra9fael.github.io/SerialCanvas/</a>
         </div>
         <div class="version-upstream-box">
-          <strong>分叉来源</strong>
-          <p>SerialWeb 由电导实验室（Conductance-lab）创作，本仓库是它的独立分叉；分叉点之前的代码归原作者，两者一律按 AGPL-3.0 授权。</p>
-          <p>分叉自上游 v1.6（提交 e3f9200814，2026/9/6），即本仓库的 v0.1.0。</p>
-          <span>原作者主页</span>
-          <a href="https://conductance-lab.xyz" target="_blank" rel="noreferrer">https://conductance-lab.xyz</a>
-          <span>上游仓库</span>
+          <strong>来源与致谢</strong>
+          <p>SerialCanvas 的前身是电导实验室（Conductance-lab）的 SerialWeb（上游 v1.6，提交 e3f9200814，2026/9/6），界面设计另借鉴了 PICOTTY（morpheuslord）。本项目已独立发展，按 AGPL-3.0 授权，原始代码版权归原作者。</p>
+          <span>原始项目</span>
           <a href="https://github.com/Conductance-lab/SerialWeb" target="_blank" rel="noreferrer">github.com/Conductance-lab/SerialWeb</a>
-          <span>上游在线版本</span>
-          <a href="https://conductance-lab.xyz/SerialWeb/" target="_blank" rel="noreferrer">https://conductance-lab.xyz/SerialWeb/</a>
-          <span>上游工具手册</span>
-          <a href="https://docs.conductance-lab.xyz/%E5%B7%A5%E5%85%B7%E6%89%8B%E5%86%8C/SerialWeb%E5%B7%A5%E5%85%B7%E6%89%8B%E5%86%8C" target="_blank" rel="noreferrer">docs.conductance-lab.xyz</a>
-          <span>原始反馈表单</span>
-          <a href="https://docs.qq.com/form/page/DU1B2RWVyZnJERHdq" target="_blank" rel="noreferrer">docs.qq.com</a>
         </div>
         <div class="version-changelog">
           <div class="version-changelog-title">更新日志</div>
           <div class="version-release">
+            <strong>v0.4.0 版本 · 26/10/8</strong>
+            <ul>
+              <li>项目更名为 SerialCanvas：本项目从 SerialWeb v1.6 出发、此后独立发展，因此不再使用 fork 的表述。 docs/fork.md 更名为来源与致谢，关于弹窗只保留原始项目链接，UI 借鉴说明同时 写入 PICOTTY。构建产物（dist/SerialCanvas.html）、 离线包文件名与 Pages 工作流一并随新名；AGPL-3.0 与原始版权不变。</li>
+              <li>☰ 菜单的三组分段按钮（主题 / 语言 / 圆角）现在共享同一套样式：此前两处 CSS :not() 列表漏掉了 .menu-corner-opt，圆角按钮被当成列表按钮排版（36px 高、带通用 hover 底色）而非分段按钮。</li>
+              <li>监视工具栏的模拟状态芯片只在手动收发子视图显示，并去掉帧数——它只回答「这批数据是不是模拟的」， 收到多少 RX 计数本来就在说。</li>
+              <li>监视工具栏改为固定两行（标题与操作 / 全部参数字段），取代 1280px 换行、1440px 终端控件独占一行、 1560px 藏标签这三套补丁；常见窗口宽度下标签不再被截断。</li>
+            </ul>
+          </div>
+          <div class="version-release">
             <strong>v0.3.0 版本 · 26/10/1</strong>
             <ul>
               <li>界面现在明确标注分叉身份：关于弹窗写清上游项目、分叉提交（e3f9200814，上游 v1.6，2026/9/6）以及各处构建的托管位置；☰ 菜单与弹窗里的链接改为指向本仓库，不再指向原作者的主机。</li>
-              <li>关于弹窗新增许可证一行，仓库补上 LICENSE：SerialWeb 采用上游声明的 AGPL-3.0 许可证。</li>
+              <li>关于弹窗新增许可证一行，仓库补上 LICENSE：SerialCanvas 采用上游声明的 AGPL-3.0 许可证。</li>
               <li>线上构建不再发送上游的页面访问统计——该请求只在原作者的主机上发出，因此 GitHub Pages 或 localhost 部署不会产生统计请求。</li>
-              <li>新增 GitHub Actions 工作流：构建 dist/SerialWeb.html 并作为 index.html 发布到 GitHub Pages。</li>
+              <li>新增 GitHub Actions 工作流：构建 dist/SerialCanvas.html 并作为 index.html 发布到 GitHub Pages。</li>
               <li>文档：新增中英双语的分叉来源，并用 tools/docs-check.py 校验文档链接、标题锚点与中英镜像。</li>
             </ul>
           </div>
@@ -824,14 +834,6 @@
             <ul>
               <li>"自动硬件流控"更名为"RTS/CTS 流控"，名称更准确。</li>
               <li>重构 TX/RX 收发与换行符显示逻辑，优化监视器渲染与事件处理。</li>
-            </ul>
-          </div>
-          <div class="version-release">
-            <strong>v1.4 版本 · 26/7/4</strong>
-            <ul>
-              <li>优化页面配色与扁平化设计，浅色/深色模式分离。</li>
-              <li>优化预设发送交互逻辑，通过开关控制全局快捷键的预设发送。</li>
-              <li>新增解析配置帮助提示，支持悬浮查看规则说明。</li>
             </ul>
           </div>
         </div>

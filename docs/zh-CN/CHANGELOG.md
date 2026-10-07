@@ -5,17 +5,30 @@
 版本号与应用内的 **关于** 弹窗一致。日期格式为 `YYYY/M/D`。
 本仓库从 `v0.1.0` 开始打标签；其下的条目保留它们发布时沿用的上游 `1.x` 编号。除这些历史条目外，
 每一节都由 `tools/set-version.py` 写入。
-编号为 `1.x` 的版本都来自原作者 [电导实验室](https://conductance-lab.xyz)，见[分叉来源](fork.md)。
+编号为 `1.x` 的版本都来自原作者 [电导实验室](https://conductance-lab.xyz)，见[来源与致谢](acknowledgements.md)。
+
+## v0.4.0 — 2026/10/8
+
+- 项目更名为 **SerialCanvas**：本项目从 SerialWeb `v1.6` 出发、此后独立发展，因此不再使用 fork 的表述。
+  `docs/fork.md` 更名为[来源与致谢](acknowledgements.md)，关于弹窗只保留原始项目链接，UI 借鉴说明同时
+  写入 [PICOTTY](https://github.com/morpheuslord/PICOTTY)。构建产物（`dist/SerialCanvas.html`）、
+  离线包文件名与 Pages 工作流一并随新名；AGPL-3.0 与原始版权不变。
+- ☰ 菜单的三组分段按钮（主题 / 语言 / 圆角）现在共享同一套样式：此前两处 CSS `:not()` 列表漏掉了
+  `.menu-corner-opt`，圆角按钮被当成列表按钮排版（36px 高、带通用 hover 底色）而非分段按钮。
+- 监视工具栏的模拟状态芯片只在手动收发子视图显示，并去掉帧数——它只回答「这批数据是不是模拟的」，
+  收到多少 RX 计数本来就在说。
+- 监视工具栏改为固定两行（标题与操作 / 全部参数字段），取代 1280px 换行、1440px 终端控件独占一行、
+  1560px 藏标签这三套补丁；常见窗口宽度下标签不再被截断。
 
 ## v0.3.0 — 2026/10/1
 
 - 界面现在明确标注**分叉**身份：关于弹窗写清上游项目、分叉提交（`e3f9200814`，上游 v1.6，2026/9/6）
   以及各处构建的托管位置；☰ 菜单与弹窗里的链接改为指向本仓库，不再指向原作者的主机。
-- 关于弹窗新增**许可证**一行，仓库补上 `LICENSE`：SerialWeb 采用上游声明的 AGPL-3.0 许可证。
+- 关于弹窗新增**许可证**一行，仓库补上 `LICENSE`：SerialCanvas 采用上游声明的 AGPL-3.0 许可证。
 - 线上构建不再发送上游的页面访问统计——该请求只在原作者的主机上发出，因此 GitHub Pages 或
   localhost 部署不会产生统计请求。
-- 新增 GitHub Actions 工作流：构建 `dist/SerialWeb.html` 并作为 `index.html` 发布到 GitHub Pages。
-- 文档：新增中英双语的[分叉来源](fork.md)，并用 `tools/docs-check.py` 校验文档链接、标题锚点与
+- 新增 GitHub Actions 工作流：构建 `dist/SerialCanvas.html` 并作为 `index.html` 发布到 GitHub Pages。
+- 文档：新增中英双语的[来源与致谢](acknowledgements.md)，并用 `tools/docs-check.py` 校验文档链接、标题锚点与
   中英镜像。
 
 ## v0.2.0 — 2026/10/1
@@ -30,7 +43,7 @@
 
 上游 `1.6`（`e3f9200814`，2026/9/6）进入本分叉的版本，同时把单个 `index.html` 拆分成了本仓库如今
 使用的源码文件。它自身的新增内容——尤其是上游 `1.6` 并没有的 xterm 终端视图——见
-[分叉来源](fork.md#本分叉新增内容)。
+[来源与致谢](acknowledgements.md#沿革)。
 
 - 修复串口接收数据特殊情况下监视器多出空行的问题。
 - 优化设备连接管理中组件的显示效果。

@@ -46,7 +46,7 @@
     ? initialPrefs.cornerRadius
     : 'square';
   document.documentElement.lang = resolveLocale(window.__serialWebInitialLocale) === 'zh' ? 'zh-CN' : 'en';
-  window.__applySerialWebInitialBodyClasses = () => {
+  window.__applySerialCanvasInitialBodyClasses = () => {
     const body = document.body;
     if (!body) return;
     const compact = window.innerWidth <= 720;
@@ -75,7 +75,7 @@
     body.classList.toggle('runtime-local', localRuntime);
   };
 
-  window.__setSerialWebFavicon = () => {
+  window.__setSerialCanvasFavicon = () => {
     const svg = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
         <rect width="64" height="64" fill="#ffffff"></rect>
@@ -104,7 +104,7 @@
 
   const syncDocumentTheme = () => {
     applyThemeClass(browserThemeQuery.matches ? 'dark' : 'light');
-    window.__setSerialWebFavicon();
+    window.__setSerialCanvasFavicon();
   };
 
   browserThemeQuery.addEventListener('change', () => {
@@ -112,5 +112,5 @@
   });
 
   applyThemeClass(window.__serialWebInitialTheme);
-  window.__setSerialWebFavicon();
+  window.__setSerialCanvasFavicon();
 })();

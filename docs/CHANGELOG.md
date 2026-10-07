@@ -5,20 +5,37 @@ Chinese mirror: [zh-CN/CHANGELOG.md](zh-CN/CHANGELOG.md).
 This repository is tagged from `v0.1.0`; the entries below it keep the upstream `1.x` numbers
 they shipped with. `tools/set-version.py` writes every section but those.
 Everything numbered `1.x` is an upstream release by the original author,
-[Conductance-lab](https://conductance-lab.xyz) — see [fork provenance](fork.md).
+[Conductance-lab](https://conductance-lab.xyz) — see [origin & credits](acknowledgements.md).
+
+## v0.4.0 — 2026/10/8
+
+- The project is renamed **SerialCanvas**: it started from SerialWeb `v1.6` and has developed
+  independently, so the fork framing is retired. `docs/fork.md` becomes
+  [origin & credits](acknowledgements.md), the About dialog keeps only the original repo link,
+  and the UI credit now also names [PICOTTY](https://github.com/morpheuslord/PICOTTY). The
+  build output (`dist/SerialCanvas.html`), the offline download filename and the Pages
+  workflow follow the new name; AGPL-3.0 and the original copyright are unchanged.
+- The three ☰-menu segmented rows (theme / language / corner) now share one style: two CSS
+  `:not()` lists forgot `.menu-corner-opt`, so the corner buttons were laid out as list
+  buttons (36px tall, generic hover background) instead of segmented ones.
+- The simulation chip in the monitor toolbar shows only in the manual sub-view and drops the
+  frame count — it answers "is this stream real", and the RX counter already says how much.
+- The monitor toolbar is a fixed two-row layout (identity and actions / parameter fields),
+  replacing the 1280px wrap, 1440px term break and 1560px label-hide patches; labels no
+  longer truncate at common window widths.
 
 ## v0.3.0 — 2026/10/1
 
 - The interface now states that this is a **fork**: the About dialog names the upstream project,
   the divergence commit (`e3f9200814`, upstream v1.6, 2026/9/6) and where each build lives, and the
   ☰ menu and dialog links point at this repository instead of the original author's host.
-- Added a **License** row to the About dialog plus a `LICENSE` file: SerialWeb is AGPL-3.0, the
+- Added a **License** row to the About dialog plus a `LICENSE` file: SerialCanvas is AGPL-3.0, the
   license the upstream project declares.
 - The hosted build no longer sends the upstream page-view request — it fires only on the original
   author's host, so a GitHub Pages or localhost deployment makes no analytics call.
-- Added a GitHub Actions workflow that builds `dist/SerialWeb.html` and publishes it to GitHub
+- Added a GitHub Actions workflow that builds `dist/SerialCanvas.html` and publishes it to GitHub
   Pages as `index.html`.
-- Documentation: new [fork provenance](fork.md) page in both languages, and
+- Documentation: new [origin & credits](acknowledgements.md) page in both languages, and
   `tools/docs-check.py` verifies doc links, heading anchors and the English/Chinese mirror.
 
 ## v0.2.0 — 2026/10/1
@@ -39,7 +56,7 @@ Everything numbered `1.x` is an upstream release by the original author,
 Upstream `1.6` (`e3f9200814`, 2026/9/6) taken into this fork, with the single `index.html` split
 into the source files this repository uses today. Its own additions — notably the xterm terminal
 view, which upstream `1.6` does not have — are described in
-[fork provenance](fork.md#what-this-fork-adds).
+[origin & credits](acknowledgements.md#provenance).
 
 - Fixed the monitor occasionally inserting blank lines for certain receive patterns.
 - Refined the display of components in device connection management.

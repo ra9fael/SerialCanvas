@@ -1,6 +1,6 @@
 'use strict';
 /* ============================================================================
- * SerialWeb - app main (part 3 of 3)
+ * SerialCanvas - app main (part 3 of 3)
  * Serial lifecycle, monitor/parser UI, charts, prefs persistence, event
  * bindings and bootstrap. Closes the IIFE opened in app.core.js.
  * ==========================================================================*/
@@ -398,13 +398,15 @@
      monitor's log — so the question "is this stream a device or the simulator"
      has to be answerable where the stream is watched. The chip answers it and
      nothing more: it is not a control, because two switches for one setting is
-     the duplication it exists to prevent. Hidden entirely when the simulator is
-     off, so it costs no attention in the common case. */
+     the duplication it exists to prevent. Manual view only — the terminal
+     sub-view is an emulator session, and a status line inside it would read as
+     program output. Hidden entirely when the simulator is off, so it costs no
+     attention in the common case. */
   function applySimulationMonitorChip() {
     const chip = refs.simulationMonitorChip;
     if (!chip) return;
     // The parse view has the real switch; a chip beside it would be noise.
-    if (state.layoutExpanded) {
+    if (state.layoutExpanded || state.ui.monitorView !== 'manual') {
       chip.hidden = true;
       chip.textContent = '';
       chip.classList.remove('is-active', 'is-yielded');
@@ -420,9 +422,9 @@
       chip.textContent = '';
       return;
     }
-    chip.textContent = yielded
-      ? t('模拟已让位 · {{count}} 帧', { count: sim.totalFrames })
-      : t('模拟中 · {{count}} 帧', { count: sim.totalFrames });
+    // No frame count: the RX counter already says how much arrived, and the
+    // chip answers one question — is this stream real or generated.
+    chip.textContent = yielded ? t('模拟已让位') : t('模拟中');
   }
 
   function syncBufferUi() {
@@ -5962,7 +5964,7 @@
         return;
       }
       downloadFile(
-        `SerialWeb-terminal-${nameStamp}.txt`,
+        `SerialCanvas-terminal-${nameStamp}.txt`,
         new Blob([lines.join('\n') + '\n'], { type: 'text/plain;charset=utf-8' })
       );
       toast('导出完成', t('终端内容已导出为文本。'), 'success');
@@ -5980,7 +5982,7 @@
       return `${prefix} ${getEventDisplayText(event)}`;
     });
     downloadFile(
-      `SerialWeb-log-${nameStamp}.txt`,
+      `SerialCanvas-log-${nameStamp}.txt`,
       new Blob([lines.join('\n') + '\n'], { type: 'text/plain;charset=utf-8' })
     );
     toast('导出完成', t('已导出 {{count}} 行日志。', { count: lines.length }), 'success');
@@ -7060,7 +7062,7 @@
     }
   }
 
-  function clearSerialWebStoredUserData() {
+  function clearSerialCanvasStoredUserData() {
     const explicitKeys = [LOCAL_PREFS_KEY, VERSION_MODAL_SEEN_KEY, 'wsl-layout'];
     const clearFromStorage = (storage) => {
       if (!storage) return;
@@ -7139,7 +7141,7 @@
 
   async function resetUserConfigToDefaults() {
     try {
-      clearSerialWebStoredUserData();
+      clearSerialCanvasStoredUserData();
     } catch (error) {
       console.warn('clear user config failed', error);
     }
@@ -8913,6 +8915,6 @@
   renderTerminalKeyBar();
   attachEventListeners();
   installTooltip();
-  trackSerialWebView();
+  trackSerialCanvasView();
   tryInitialSerialConnectPrompt();
 })();

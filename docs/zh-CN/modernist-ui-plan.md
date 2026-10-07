@@ -4,7 +4,7 @@
 
 分支：`feat/modernist-ui`（从 `main` 于 `3c1734a` 切出）。
 
-把参考面板（picotty）的视觉语言迁入 SerialWeb。
+把参考面板（picotty）的视觉语言迁入 SerialCanvas。
 
 ## 0. 已定决策
 
@@ -40,11 +40,11 @@ picotty 前端只有三个文件，而且**样式不在 JavaScript 里**：
 再加一个强烈的排调性：`Archivo` 字重 800 作标题，10–11px 全大写 letter-spacing
 作标签，单一暖红强调色（`#ec3013`）克制使用。
 
-## 2. SerialWeb 的差距
+## 2. SerialCanvas 的差距
 
 以下均基于当前 `main`（`3c1734a`）实测，非估算：
 
-| 属性 | SerialWeb 现状 | `style.css` 中数量 |
+| 属性 | SerialCanvas 现状 | `style.css` 中数量 |
 | --- | --- | --- |
 | 圆角 | 8/10/12/14/16/18/20px、`999px`、`50%` | 112 处 `border-radius` |
 | 药丸 / 圆形 | `999px` 用于chip、live bar、状态标签 | 18 |
@@ -94,10 +94,10 @@ picotty 前端只有三个文件，而且**样式不在 JavaScript 里**：
 
 ### Phase 1 — 令牌层（收益最高、风险最低）
 
-把 `style.css` 1–64 行改写为 picotty 令牌集，用 SerialWeb 自己的变量名表达，使文件其余部分
+把 `style.css` 1–64 行改写为 picotty 令牌集，用 SerialCanvas 自己的变量名表达，使文件其余部分
 继续工作：
 
-| SerialWeb 令牌 | 新值 | 来源 |
+| SerialCanvas 令牌 | 新值 | 来源 |
 | --- | --- | --- |
 | `--bg` | `#f3f2f2` | `--color-bg` |
 | `--bg-panel`、`--bg-panel-strong` | `#eae9e9` | `--color-surface` |
@@ -231,8 +231,8 @@ picotty 前端只有三个文件，而且**样式不在 JavaScript 里**：
 | 存储位置 | `state.cornerRadius`，在 `buildLocalPrefsSnapshot()`（`app.main.js:6299`）中与 `theme`/`locale` 并列快照 |
 | 应用方式 | `applyCornerRadius()`，仿照 `applyTheme()`（`app.core.js:1469`）—— 在 `<html>` 与 `<body>` 上设置 `data-corner`、切换 `is-active`、调用 `refitTerminal()` |
 | 处理函数 | `handleCornerRadiusChange(value)`，仿照 `handleThemeChange()`（`app.core.js:1499`），末尾调用 `scheduleLocalPrefsSave()` |
-| **首帧** | `bootstrap.js` 必须读取 `prefs.cornerRadius` 并在 `__applySerialWebInitialBodyClasses()` 内设置 `data-corner`，否则保存的值会闪一帧默认值——这正是 `__applySerialWebInitialBodyClasses()` 为主题色已解决的问题 |
-| 清空/重置 | `clearSerialWebStoredUserData()`（`app.main.js:6415`）已清除整个偏好键，无需额外工作 |
+| **首帧** | `bootstrap.js` 必须读取 `prefs.cornerRadius` 并在 `__applySerialCanvasInitialBodyClasses()` 内设置 `data-corner`，否则保存的值会闪一帧默认值——这正是 `__applySerialCanvasInitialBodyClasses()` 为主题色已解决的问题 |
+| 清空/重置 | `clearSerialCanvasStoredUserData()`（`app.main.js:6415`）已清除整个偏好键，无需额外工作 |
 
 `bootstrap.js` 是最容易忘的一处。主题类在那里设置，正是为了首帧正确；圆角属性需要同样处理。
 
@@ -272,7 +272,7 @@ kicker 处理以保持一致。三个选项标签很短（2–3 个汉字），�
 ```sh
 python -m http.server 8000        # 源码模式需要 HTTP，fetch() 排除了 file://
 python build-release.py           # 必须通过残留引用断言
-node --check dist/SerialWeb.html  # 单文件健全性
+node --check dist/SerialCanvas.html  # 单文件健全性
 python tools/docs-check.py        # 文档变更时
 ```
 
@@ -312,8 +312,8 @@ python tools/docs-check.py        # 文档变更时
 （"Raspberry Pi Dashboard UI mockup"）。令牌值本身——十六进制颜色、间距尺度、`0px`
 圆角——不构成可保护的表达，因此重新推导它们是直接可行的。但由于该文件本身无许可，所以：
 
-- **重新推导令牌，不要复制文件。** Phase 1 中的每个值都是对照SerialWeb 自己的变量名
+- **重新推导令牌，不要复制文件。** Phase 1 中的每个值都是对照SerialCanvas 自己的变量名
   从零写出的。
-- 若日后需要 `app.js` 里的任何逻辑（tooltip 单例确实写得好），需按SerialWeb 的结构
+- 若日后需要 `app.js` 里的任何逻辑（tooltip 单例确实写得好），需按SerialCanvas 的结构
   重新实现，而非粘贴。
-- 在 `docs/fork.md` 中记录溯源，那里已经在追踪本 fork 借鉴过什么、来自何方。
+- 在 `docs/acknowledgements.md` 中记录溯源，那里已经在追踪本 fork 借鉴过什么、来自何方。

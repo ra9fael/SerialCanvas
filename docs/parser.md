@@ -65,7 +65,7 @@ and does not have to be sequential.
 
 ### How a rule is matched
 
-SerialWeb tries three strategies, in order, and stops at the first that yields anything:
+SerialCanvas tries three strategies, in order, and stops at the first that yields anything:
 
 1. **Anchored match.** The rule compiles to `^<pattern>$` (Unicode) and the trimmed line has
    to fit it end to end. This is exact and fastest.
@@ -111,7 +111,7 @@ button. The label reads `自动识别：可用` or `自动识别：不可用`; c
 suggestion does nothing. When the button says 可用 there is a real suggestion — the button is
 never truly disabled.
 
-After connecting, if a suggestion exists and differs from your current rule, SerialWeb raises
+After connecting, if a suggestion exists and differs from your current rule, SerialCanvas raises
 an actionable **发现解析可用** toast with two choices: **应用添加并转到** (apply the rule, add
 a time chart for every numeric channel, expand the layout) or apply the rule only. The prompt
 appears once per connection and only in realtime, text mode, while connected.

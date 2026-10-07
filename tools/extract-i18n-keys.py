@@ -1,4 +1,4 @@
-"""Extract translatable UI strings from SerialWeb.
+"""Extract translatable UI strings from SerialCanvas.
 
 Approximates what the runtime sees, so the result can be pasted into
 app.lang.js as a key list:

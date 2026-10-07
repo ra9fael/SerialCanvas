@@ -3,7 +3,7 @@
 Branch: `feat/modernist-ui` (cut from `main` at `3c1734a`)
 
 Adopt the visual language of the picotty dashboard (reference source:
-`tmp/picotty/static/`) into SerialWeb.
+`tmp/picotty/static/`) into SerialCanvas.
 
 ## 0. Decisions taken
 
@@ -45,11 +45,11 @@ Plus one strong typographic voice: `Archivo` at weight 800 for headings, 10–11
 uppercase letter-spaced kickers for labels, and a single warm-red accent
 (`#ec3013`) used sparingly.
 
-## 2. The gap in SerialWeb
+## 2. The gap in SerialCanvas
 
 Measured on the current `main` (`3c1734a`), not estimated:
 
-| Property | SerialWeb today | Count in `style.css` |
+| Property | SerialCanvas today | Count in `style.css` |
 | --- | --- | --- |
 | Rounded corners | 8/10/12/14/16/18/20px, `999px`, `50%` | 112 `border-radius` declarations |
 | Pills / circles | `999px` on chips, live bar, status chips | 18 |
@@ -111,9 +111,9 @@ deferring the geometry pass means the token change is visible on its own before
 ### Phase 1 — Token layer (highest impact, lowest risk)
 
 Rewrite lines 1–64 of `style.css` as the picotty token set, re-expressed in
-SerialWeb's own variable names so the rest of the file keeps working:
+SerialCanvas's own variable names so the rest of the file keeps working:
 
-| SerialWeb token | New value | Source |
+| SerialCanvas token | New value | Source |
 | --- | --- | --- |
 | `--bg` | `#f3f2f2` | `--color-bg` |
 | `--bg-panel`, `--bg-panel-strong` | `#eae9e9` | `--color-surface` |
@@ -271,8 +271,8 @@ Rides the existing preference path, exactly like `theme` and `locale`:
 | Stored under | `state.cornerRadius`, snapshotted in `buildLocalPrefsSnapshot()` (`app.main.js:6299`) next to `theme` / `locale` |
 | Applied by | `applyCornerRadius()`, mirroring `applyTheme()` (`app.core.js:1469`) — sets `data-corner` on `<html>` and `<body>`, toggles `is-active`, calls `refitTerminal()` |
 | Handler | `handleCornerRadiusChange(value)`, mirroring `handleThemeChange()` (`app.core.js:1499`), ending in `scheduleLocalPrefsSave()` |
-| First paint | `bootstrap.js` must read `prefs.cornerRadius` and set `data-corner` inside `__applySerialWebInitialBodyClasses()`, or the saved value flashes the default for one frame — the same problem `__applySerialWebInitialBodyClasses()` already solves for theme and layout |
-| Clear/reset | `clearSerialWebStoredUserData()` (`app.main.js:6415`) already clears the whole prefs key, so no extra work |
+| First paint | `bootstrap.js` must read `prefs.cornerRadius` and set `data-corner` inside `__applySerialCanvasInitialBodyClasses()`, or the saved value flashes the default for one frame — the same problem `__applySerialCanvasInitialBodyClasses()` already solves for theme and layout |
+| Clear/reset | `clearSerialCanvasStoredUserData()` (`app.main.js:6415`) already clears the whole prefs key, so no extra work |
 
 `bootstrap.js` is the one that is easy to forget. The theme class is set there
 precisely so the first painted frame is correct; the radius attribute needs the
@@ -317,7 +317,7 @@ Each phase is one commit on `feat/modernist-ui`, verified before the next:
 ```sh
 python -m http.server 8000        # source mode needs HTTP, fetch() rules out file://
 python build-release.py           # must pass the leftover-reference assertion
-node --check dist/SerialWeb.html  # single-file sanity
+node --check dist/SerialCanvas.html  # single-file sanity
 python tools/docs-check.py        # when docs change
 ```
 
@@ -362,8 +362,8 @@ radii — are not protectable expression, so re-deriving them is straightforward
 But the file itself has no licence, so:
 
 - **Re-derive the tokens, do not copy the file.** Every value in Phase 1 is
-  written from scratch against SerialWeb's own variable names.
+  written from scratch against SerialCanvas's own variable names.
 - If any `app.js` logic is wanted later (the tooltip singleton is genuinely good),
-  it gets reimplemented against SerialWeb's structure, not pasted.
-- Note the provenance in `docs/fork.md`, which already tracks what this fork
+  it gets reimplemented against SerialCanvas's structure, not pasted.
+- Note the provenance in `docs/acknowledgements.md`, which already tracks what this project
   borrowed and from where.

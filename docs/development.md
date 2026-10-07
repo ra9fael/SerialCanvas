@@ -16,7 +16,7 @@ app.main.js             (~8000 lines) Serial lifecycle, RX pipeline, monitor ren
 style.css               All styling, light/dark themes, compact layout.
 vendor/xterm/           Vendored xterm.js + fit addon + css (no CDN, so offline works).
 LICENSE                 AGPL-3.0, the license the upstream project declares.
-build-release.py        Verifies the version, then produces dist/SerialWeb.html.
+build-release.py        Verifies the version, then produces dist/SerialCanvas.html.
 .github/workflows/      pages.yml — builds the artifact on every push to main and deploys
                         it to GitHub Pages.
 tools/                  Optional development helpers: set-version.py (cut a release),
@@ -24,7 +24,7 @@ tools/                  Optional development helpers: set-version.py (cut a rele
                         extract-i18n-keys.py (dictionary key lister),
                         docs-check.py (doc links, anchors, en/zh mirror parity). Not shipped.
 docs/                   This documentation set (English at the root, zh-CN mirror),
-                        including fork.md (provenance).
+                        including acknowledgements.md (provenance).
 ```
 
 There is no bundler, no framework, no build step for development — the sources are the
@@ -55,7 +55,7 @@ This has consequences the moment you touch the sources:
 Browsers treat each `<script src>` as an independent program, so `app.loader.js` fetches the
 three chunks, joins them with `\n`, and injects the result as one inline `<script>`. `fetch()`
 does not work from `file://`, so opening `index.html` by double-clicking shows an overlay
-pointing at `dist/SerialWeb.html`. Web Serial additionally requires a secure context, so
+pointing at `dist/SerialCanvas.html`. Web Serial additionally requires a secure context, so
 `file://` could not connect a port anyway. For development, serve the root:
 
 ```sh
@@ -66,9 +66,9 @@ python -m http.server 8000     # http://localhost:8000/
 
 `bootstrap.js` defines the only intentional `window.*` surface:
 `__serialWebInitialPrefs`, `__serialWebInitialTheme`,
-`__applySerialWebInitialBodyClasses()` (called by the inline script at the top of `<body>`, so
+`__applySerialCanvasInitialBodyClasses()` (called by the inline script at the top of `<body>`, so
 the first painted frame already has the right theme/panel classes and does not flash) and
-`__setSerialWebFavicon()`. The app bundle exports nothing — there is no console API, and
+`__setSerialCanvasFavicon()`. The app bundle exports nothing — there is no console API, and
 nothing is reachable from a DevTools snippet. When adding a startup-time concern, extend
 `bootstrap.js` rather than attaching to `window` from the app.
 
@@ -79,7 +79,7 @@ few `refs.*` names are read with optional chaining but have no entry and no elem
 `refs.statUptime`, `refs.extensionPanel`); they are inert leftovers, safe to remove.
 
 Boot order at the end of the IIFE: `initializeDefaults()` → `attachEventListeners()` →
-`trackSerialWebView()` → `tryInitialSerialConnectPrompt()`.
+`trackSerialCanvasView()` → `tryInitialSerialConnectPrompt()`.
 
 ## Extension points
 
@@ -125,7 +125,7 @@ Prerequisites: Python 3, plus
 ```sh
 npm install                                   # provides node_modules/.bin/esbuild
 pip install minify-html                       # optional, further compression
-python build-release.py                       # -> dist/SerialWeb.html
+python build-release.py                       # -> dist/SerialCanvas.html
 python build-release.py --no-minify           # readable output, fastest
 ```
 
@@ -156,7 +156,7 @@ The result is one self-contained file that runs from `file://` (interface only �
 The app has no automated tests. The practical pass is:
 
 1. Rebuild, then serve the root and load both `index.html` (source mode) and
-   `dist/SerialWeb.html` (release mode) — a minification-only bug shows up in the second only.
+   `dist/SerialCanvas.html` (release mode) — a minification-only bug shows up in the second only.
 2. Check the console first: a broken closure surfaces as one `SyntaxError` and an empty page;
    `app.loader.js` sets `document.documentElement.dataset.appLoadError` when a chunk fails.
 3. Exercise the loop with a device, or with the browser's virtual serial port / a loop-backed
@@ -175,7 +175,7 @@ The app has no automated tests. The practical pass is:
    two places that ran out of room first.
 
 `tools/cdp-check.mjs` automates 1, 2 and 8: it drives a headless Edge over CDP with no
-dependencies — `node tools/cdp-check.mjs --url http://127.0.0.1:8731/dist/SerialWeb.html --out
+dependencies — `node tools/cdp-check.mjs --url http://127.0.0.1:8731/dist/SerialCanvas.html --out
 audit --scenario i18n` — and writes a JSON trace plus a screenshot, reporting console errors.
 The scenarios are `i18n` (locale round-trip and residual audit), `term` (font availability,
 size, ctrl+wheel, applying while hidden), `roundtrip` and `reset`.
@@ -187,7 +187,7 @@ size, ctrl+wheel, applying while hidden), `roundtrip` and `reset`.
 `const VERSION` in `app.core.js` is the only version the app reads: it drives the ☰ **关于** label,
 the dialog title and current-version line, the `serialweb:version-modal-seen` flag, and the
 `appVersion` field written into prefs. Because `syncVersionDisplay()` overwrites those strings at
-boot, their markup copies are deliberately neutral (`关于`, `SerialWeb`, `—`) — do not put a number
+boot, their markup copies are deliberately neutral (`关于`, `SerialCanvas`, `—`) — do not put a number
 back into them. Two places still carry a literal version, because they have to be right before any
 script runs: the 更新日志 blocks in `index.html` and the docs.
 
@@ -223,8 +223,8 @@ copies disagree, so a skipped step fails the build instead of shipping a stale d
 ## Publishing on GitHub Pages
 
 `.github/workflows/pages.yml` runs `build-release.py` on Python 3.12 and Node 22, copies
-`dist/SerialWeb.html` to `dist/index.html`, uploads `dist/` as the Pages artifact, and the
-`deploy` job publishes it to <https://ra9fael.github.io/SerialWeb/>. The site is therefore always
+`dist/SerialCanvas.html` to `dist/index.html`, uploads `dist/` as the Pages artifact, and the
+`deploy` job publishes it to <https://ra9fael.github.io/SerialCanvas/>. The site is therefore always
 exactly the artifact of the commit it was built from — nothing is uploaded by hand and `dist/`
 stays out of Git. The version guard runs first, so a drifted tree fails the build instead of
 publishing a stale dialog.
@@ -232,15 +232,15 @@ publishing a stale dialog.
 Pages defaults a new repository to `main:/` as its source, so this needs to be switched once:
 
 ```sh
-gh api -X POST repos/ra9fael/SerialWeb/pages -f build_type=workflow
-gh api repos/ra9fael/SerialWeb/pages --jq .build_type   # -> workflow
+gh api -X POST repos/ra9fael/SerialCanvas/pages -f build_type=workflow
+gh api repos/ra9fael/SerialCanvas/pages --jq .build_type   # -> workflow
 ```
 
 After that every push to `main`, or a manually dispatched run, redeploys. The lockfile resolves
 esbuild from a mirror registry; the workflow falls back to `registry.npmjs.org` when that install
 fails, and the build still emits a working (unminified) file if esbuild is missing entirely.
 
-The published page makes no analytics request: `trackSerialWebView()` posts the page-view count
+The published page makes no analytics request: `trackSerialCanvasView()` posts the page-view count
 only when the hostname is `conductance-lab.xyz`, which is the upstream author's host, so neither a
 Pages deployment nor a local `http://localhost` one contacts it.
 
@@ -248,10 +248,10 @@ Pages deployment nor a local `http://localhost` one contacts it.
 
 1. Write the notes into both changelogs under `Unreleased` / `未发布`, then cut the version as in
    [cutting a release](#cutting-a-release). Do not edit `VERSION` or the dialog by hand.
-2. Smoke-test `dist/SerialWeb.html`: console clean, both locales, and the ☰ **关于** dialog showing
+2. Smoke-test `dist/SerialCanvas.html`: console clean, both locales, and the ☰ **关于** dialog showing
    the new version.
 3. Push `main` and the tag. The [Pages workflow](#publishing-on-github-pages) then rebuilds and
-   redeploys <https://ra9fael.github.io/SerialWeb/> from that commit. The offline
+   redeploys <https://ra9fael.github.io/SerialCanvas/> from that commit. The offline
    **下载离线版到本地** link and `ONLINE_VERSION_URL` are static — no update feed exists, so a
    version check happens only when the page is loaded.
 4. Check the deployed page: console clean, version label correct, and ☰ → 关于 showing the new
@@ -270,6 +270,6 @@ Chinese source text (a missing entry degrades to Chinese rather than showing a k
 
 `python tools/docs-check.py` verifies the tree: every relative link and heading anchor resolves,
 and each English page has a `docs/zh-CN/` mirror with the same heading counts. Run it after moving
-or renaming a heading. [fork provenance](fork.md) is the page to keep accurate when the project's
+or renaming a heading. [origin & credits](acknowledgements.md) is the page to keep accurate when the project's
 identity changes — the divergence point, what this fork adds and the license terms; the About
 dialog in `index.html` carries the same facts in compressed form, so the two are edited together.

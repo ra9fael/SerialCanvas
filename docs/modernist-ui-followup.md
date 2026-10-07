@@ -93,7 +93,7 @@ Phase 1 shipped the token layer; the UI is now in place and verified end to end.
 | Handler | `handleCornerRadiusChange()` + `cycleCornerRadius()` |
 | Persistence | `cornerRadius` in `buildLocalPrefsSnapshot()` and `applyLocalPrefsSnapshot()` |
 | Reset | `cornerRadius: 'square'` added to `buildDefaultUserConfigSnapshot()` |
-| First paint | `bootstrap.js` sets `data-corner` inside `__applySerialWebInitialBodyClasses()` |
+| First paint | `bootstrap.js` sets `data-corner` inside `__applySerialCanvasInitialBodyClasses()` |
 | i18n | `圆角：` / `直角` / `微圆` / `圆润` in `app.lang.js` |
 
 ### Verified
@@ -142,19 +142,19 @@ the whole point of doing Phase 2 before Phase 5's UI work.
 
 ### 3a. Layout — what actually transfers
 
-picotty is a three-column fleet console: `nodes │ console │ activity`. SerialWeb
+picotty is a three-column fleet console: `nodes │ console │ activity`. SerialCanvas
 is a two-column instrument panel: `config │ parser+monitor`. These are different
 products, so the column count is not the lesson. Four things do transfer:
 
-| Idea | Why it fits SerialWeb |
+| Idea | Why it fits SerialCanvas |
 | --- | --- |
-| **Collapsible side rails with a keyboard toggle** | SerialWeb has `layout-expanded` and `sidebar-collapsed` already, but only mouse-driven. Adding a toggle key makes the wide/narrow switch instant. |
-| **A persistent control-byte strip** | picotty keeps serial control bytes (CR/LF/TAB/ESC/Ctrl-C…) visible in a dedicated row rather than hiding them in a menu. SerialWeb sends these through preset items. A visible strip would beat memorising hex. |
-| **Status dot + relative timestamp per row** | picotty renders `online · 3s ago` inline. SerialWeb's timeline shows absolute stamps; a relative age on the status pill is cheap and answers "is it alive?" faster. |
-| **Rail columns that flex with viewport** | picotty uses `clamp(228px, 20vw, 304px)` so the console never gets squeezed. SerialWeb pins `286px` (`style.css:1936`). Worth adopting for ultrawide. |
+| **Collapsible side rails with a keyboard toggle** | SerialCanvas has `layout-expanded` and `sidebar-collapsed` already, but only mouse-driven. Adding a toggle key makes the wide/narrow switch instant. |
+| **A persistent control-byte strip** | picotty keeps serial control bytes (CR/LF/TAB/ESC/Ctrl-C…) visible in a dedicated row rather than hiding them in a menu. SerialCanvas sends these through preset items. A visible strip would beat memorising hex. |
+| **Status dot + relative timestamp per row** | picotty renders `online · 3s ago` inline. SerialCanvas's timeline shows absolute stamps; a relative age on the status pill is cheap and answers "is it alive?" faster. |
+| **Rail columns that flex with viewport** | picotty uses `clamp(228px, 20vw, 304px)` so the console never gets squeezed. SerialCanvas pins `286px` (`style.css:1936`). Worth adopting for ultrawide. |
 
-What does **not** transfer: the node list (SerialWeb has one port, not a fleet),
-the hub/failover status, and the nav-as-tabs pattern (SerialWeb's mode switch is
+What does **not** transfer: the node list (SerialCanvas has one port, not a fleet),
+the hub/failover status, and the nav-as-tabs pattern (SerialCanvas's mode switch is
 already a segmented control in the brand block).
 
 ### 3b. Shortcuts — picotty's actual set
@@ -172,7 +172,7 @@ Plus the streaming behaviour itself: printable keys accumulate and flush on a
 handful of frames per second instead of one per character. `Enter`/`Backspace`/
 `Esc` flush immediately and stay atomic with the pending buffer.
 
-### 3c. What SerialWeb already has — do not duplicate
+### 3c. What SerialCanvas already has — do not duplicate
 
 | Capability | Where | Note |
 | --- | --- | --- |
@@ -207,7 +207,7 @@ Two rules before adding anything:
 
 picotty's genuinely good idea is its custom tooltip carrying a **"Learn more"**
 link (`app.js:64`–`132`, singleton on `<body>`, delegated `mouseover`, hover-intent
-delay, flip-above when it would overflow). SerialWeb has 2 `help-icon` elements
+delay, flip-above when it would overflow). SerialCanvas has 2 `help-icon` elements
 and 15 `title=` attributes using native tooltips and a CSS `::after` bubble that
 cannot host a link.
 

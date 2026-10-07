@@ -83,7 +83,7 @@ Phase 1 交付了令牌层；现在 UI 已就位并通过端到端验证。
 | 处理函数 | `handleCornerRadiusChange()` + `cycleCornerRadius()` |
 | 持久化 | `cornerRadius`，出现在 `buildLocalPrefsSnapshot()` 与 `applyLocalPrefsSnapshot()` |
 | 重置 | `buildDefaultUserConfigSnapshot()` 中新增 `cornerRadius: 'square'` |
-| 首帧 | `bootstrap.js` 在 `__applySerialWebInitialBodyClasses()` 内设置 `data-corner` |
+| 首帧 | `bootstrap.js` 在 `__applySerialCanvasInitialBodyClasses()` 内设置 `data-corner` |
 | i18n | `app.lang.js` 中的 `圆角：` / `直角` / `微圆` / `圆润` |
 
 ### 已验证
@@ -126,18 +126,18 @@ Phase 1 交付了令牌层；现在 UI 已就位并通过端到端验证。
 
 ### 3a. 布局 — 真正能迁移的部分
 
-picotty 是三列机群控制台：`节点 │ 控制台 │ 活动`。SerialWeb 是两列仪器面板：
+picotty 是三列机群控制台：`节点 │ 控制台 │ 活动`。SerialCanvas 是两列仪器面板：
 `配置 │ 解析+监视`。这是不同的产品，所以列数不是重点。能迁移的有四样：
 
-| 思路 | 为什么适合 SerialWeb |
+| 思路 | 为什么适合 SerialCanvas |
 | --- | --- |
-| **可折叠侧栏 + 键盘切换** | SerialWeb 已有 `layout-expanded` 与 `sidebar-collapsed`，但只能鼠标操作。加一个切换键能让宽/窄切换即时完成。 |
-| **常驻的控制字节条** | picotty 把串口控制字节（CR/LF/TAB/ESC/Ctrl-C…）放在专门一行常驻可见，而不是藏在菜单里。SerialWeb 通过预设项发送这些。一个常驻条会优于背十六进制。 |
-| **每行的状态点 + 相对时间戳** | picotty 内联渲染 `online · 3s ago`。SerialWeb 的时间线显示绝对时间戳；在状态标签上加一个相对时长很便宜，且更快回答"它还活着吗"。 |
-| **随视口伸缩的侧栏列宽** | picotty 用 `clamp(228px, 20vw, 304px)`，控制台不会被挤压。SerialWeb 钉死在 `286px`（`style.css:1936`）。超宽屏值得采用。 |
+| **可折叠侧栏 + 键盘切换** | SerialCanvas 已有 `layout-expanded` 与 `sidebar-collapsed`，但只能鼠标操作。加一个切换键能让宽/窄切换即时完成。 |
+| **常驻的控制字节条** | picotty 把串口控制字节（CR/LF/TAB/ESC/Ctrl-C…）放在专门一行常驻可见，而不是藏在菜单里。SerialCanvas 通过预设项发送这些。一个常驻条会优于背十六进制。 |
+| **每行的状态点 + 相对时间戳** | picotty 内联渲染 `online · 3s ago`。SerialCanvas 的时间线显示绝对时间戳；在状态标签上加一个相对时长很便宜，且更快回答"它还活着吗"。 |
+| **随视口伸缩的侧栏列宽** | picotty 用 `clamp(228px, 20vw, 304px)`，控制台不会被挤压。SerialCanvas 钉死在 `286px`（`style.css:1936`）。超宽屏值得采用。 |
 
-**不**值得借鉴的：节点列表（SerialWeb 是单端口，不是机群）、hub/故障转移状态、
-以及"导航即标签页"的模式（SerialWeb 的模式切换已经是品牌区里的分段控件了）。
+**不**值得借鉴的：节点列表（SerialCanvas 是单端口，不是机群）、hub/故障转移状态、
+以及"导航即标签页"的模式（SerialCanvas 的模式切换已经是品牌区里的分段控件了）。
 
 ### 3b. 快捷键 — picotty 实际只有三个
 
@@ -153,7 +153,7 @@ picotty 是三列机群控制台：`节点 │ 控制台 │ 活动`。SerialWeb
 （`scheduleSerialFlush`，1411 行），于是快速打字变成每秒若干帧，而不是每字符一帧。
 `Enter`/`Backspace`/`Esc` 立即冲刷，并与待发缓冲区保持原子。
 
-### 3c. SerialWeb 已有的 — 不要重复实现
+### 3c. SerialCanvas 已有的 — 不要重复实现
 
 | 能力 | 位置 | 说明 |
 | --- | --- | --- |
@@ -186,7 +186,7 @@ picotty 是三列机群控制台：`节点 │ 控制台 │ 活动`。SerialWeb
 
 picotty 真正好的一点是它的自定义 tooltip 携带一个**"Learn more"** 链接
 （`app.js:64`–`132`，挂在 `<body>` 上的单例，委托的 `mouseover`，悬停意图延迟，溢出时翻到
-上方）。SerialWeb 有 2 个 `help-icon` 元素和 15 个 `title=` 属性，用的是原生 tooltip 和一个
+上方）。SerialCanvas 有 2 个 `help-icon` 元素和 15 个 `title=` 属性，用的是原生 tooltip 和一个
 无法承载链接的 CSS `::after` 气泡。
 
 借鉴这个单例模式是值得的，而且它天然是快捷键表的容身之处：一个列出所有绑定的模态框，用

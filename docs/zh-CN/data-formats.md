@@ -1,6 +1,6 @@
 # 数据格式
 
-SerialWeb 写出或持久化的一切格式，便于其他工具读取抓取数据与配置。
+SerialCanvas 写出或持久化的一切格式，便于其他工具读取抓取数据与配置。
 
 - [浏览器存储](#浏览器存储)
 - [配置快照](#配置快照)
@@ -27,7 +27,7 @@ SerialWeb 写出或持久化的一切格式，便于其他工具读取抓取数�
 
 ```jsonc
 {
-  "appVersion": "0.3.0",
+  "appVersion": "0.4.0",
   "receiveContentSchemaVersion": 1,
   "savedAt": 1767100000000,          // Date.now()，仅供参考
   "theme": "system",                 // "system" | "light" | "dark"

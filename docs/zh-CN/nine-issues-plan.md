@@ -177,7 +177,7 @@ else if (value === 'round') refs.cornerGroup.classList.add('pos-dark');
 picotty 有 `serialKeydown()`（`app.js:1429`），覆盖 Enter、Backspace、Tab、Esc、
 `Ctrl-C` / `D` / `Z`，外加 40 ms 冲刷防抖。
 
-SerialWeb 已经更好：`term.onData(handleTermData)`（`app.terminal.js:197`）让所有按键
+SerialCanvas 已经更好：`term.onData(handleTermData)`（`app.terminal.js:197`）让所有按键
 由 xterm 原生接管，功能键和方向键在**终端内**已经可用。缺的是**可发现的按钮**——
 你得先知道这些键存在。
 
@@ -294,11 +294,11 @@ DEMO 模式会播种假节点并能模拟 OTA 刷写。
 
 | 想法 | 结论 |
 | --- | --- |
-| **自定义 tooltip 单例** | **值得做。** `app.js:64`–`132`。SerialWeb 只有 2 个 `help-icon` 和 15 个 `title=` 属性。原生 `title=` 无法承载链接，现有的 CSS `::after` 气泡也不能。单例可以带"了解更多"链接，并且天然是快捷键表的容身之处。它还能零成本地提升 C1 和 B2 的可发现性。 |
-| **提示 / 目标状态徽章** | 跳过。picotty 的徽章回答"节点是否活着/目标机器是否在线"——机群概念。SerialWeb 只有一个端口，状态标签已经承担了这个职责。 |
+| **自定义 tooltip 单例** | **值得做。** `app.js:64`–`132`。SerialCanvas 只有 2 个 `help-icon` 和 15 个 `title=` 属性。原生 `title=` 无法承载链接，现有的 CSS `::after` 气泡也不能。单例可以带"了解更多"链接，并且天然是快捷键表的容身之处。它还能零成本地提升 C1 和 B2 的可发现性。 |
+| **提示 / 目标状态徽章** | 跳过。picotty 的徽章回答"节点是否活着/目标机器是否在线"——机群概念。SerialCanvas 只有一个端口，状态标签已经承担了这个职责。 |
 | **离线发送队列** | 值得考虑。若 C3 落地，队列能让你在模拟或真实设备重连期间继续输入命令。依赖 C3。 |
 | **会话回放（asciicast）** | 推迟。与 C2 的 `.cast` 那一半配套；单独都无用。 |
-| **宏 / runbook 系统** | 跳过。SerialWeb 的预设发送已覆盖单次发送场景；runbook 是一层 YAML 编排，SerialWeb 用不上。 |
+| **宏 / runbook 系统** | 跳过。SerialCanvas 的预设发送已覆盖单次发送场景；runbook 是一层 YAML 编排，SerialCanvas 用不上。 |
 | **固件 OTA** | 跳过。Pico 专有。 |
 | **控制字节条** | 由 C1 覆盖。 |
 

@@ -1,14 +1,14 @@
 'use strict';
 /* ============================================================================
- * SerialWeb - app core (part 1 of 3)
+ * SerialCanvas - app core (part 1 of 3)
  * Opens the application IIFE. Contains constants, application state, DOM
  * references and shared utility helpers. The IIFE closure continues in
  * app.terminal.js and is closed by app.main.js - load order matters:
  *   bootstrap.js -> vendor/xterm/* -> app.core.js -> app.terminal.js -> app.main.js
  * ==========================================================================*/
 (() => {
-  const VERSION = '0.3.0';
-  const ONLINE_VERSION_URL = 'https://ra9fael.github.io/SerialWeb/';
+  const VERSION = '0.4.0';
+  const ONLINE_VERSION_URL = 'https://ra9fael.github.io/SerialCanvas/';
   const VERSION_MODAL_SEEN_KEY = 'serialweb:version-modal-seen';
   const MAX_DERIVED_LOG_LINES = 320;
   const SERIAL_BUFFER_SIZE = 65536;
@@ -31,7 +31,7 @@
   const SEND_EXTENSION_DEFAULT_HEIGHT = 252;
   const SEND_EXTENSION_MIN_HEIGHT = 120;
   const SEND_MONITOR_MIN_HEIGHT = 150;
-  const DOWNLOAD_HTML_FILENAME = 'SerialWeb串口调试.html';
+  const DOWNLOAD_HTML_FILENAME = 'SerialCanvas串口调试.html';
   const CHART_ZOOM_MIN = 0.02;
   const CHART_ZOOM_MAX = 240;
   const MODE_PULSE_MS = 500;
@@ -1857,7 +1857,7 @@
         opt.classList.toggle('is-active', opt.dataset.theme === state.theme);
       });
     }
-    window.__setSerialWebFavicon?.();
+    window.__setSerialCanvasFavicon?.();
     refitTerminal();
   }
 
@@ -2920,8 +2920,8 @@
     }
     if (refs.versionModalTitle) {
       refs.versionModalTitle.textContent = t(localMode
-        ? 'SerialWeb 离线版本 v{{version}}'
-        : 'SerialWeb 在线版本 v{{version}}', { version: VERSION });
+        ? 'SerialCanvas 离线版本 v{{version}}'
+        : 'SerialCanvas 在线版本 v{{version}}', { version: VERSION });
     }
     if (refs.versionCurrentLabel) {
       refs.versionCurrentLabel.textContent = versionLabel;
@@ -3000,7 +3000,7 @@
   let serialWebViewTracked = false;
 
   // Upstream's own page counter: its KV endpoint only exists on the author's host.
-  function trackSerialWebView() {
+  function trackSerialCanvasView() {
     if (serialWebViewTracked) return;
     const host = window.location.hostname;
     if (host !== 'conductance-lab.xyz' && host !== 'www.conductance-lab.xyz') return;

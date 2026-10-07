@@ -1,6 +1,6 @@
-# SerialWeb
+# SerialCanvas
 
-SerialWeb is a browser-based serial-port debugger and data-plotting tool built on the
+SerialCanvas is a browser-based serial-port debugger and data-plotting tool built on the
 Web Serial API. It ships as a **single HTML file** with no server, no installer and no
 CDN dependency, so it runs from a local disk, a USB stick, or a web page.
 
@@ -15,14 +15,15 @@ It combines four jobs that normally need separate tools:
 - **Timeline recorder** — record a session to raw bytes, freeze the live view, scrub and
   replay archived captures, and export/import them as `.bin` / `.csv` / `.txt`.
 
-Current version: **v0.3.0**. This fork's home:
-<https://ra9fael.github.io/SerialWeb/> ·
-<https://github.com/ra9fael/SerialWeb>
+Current version: **v0.4.0**. This fork's home:
+<https://ra9fael.github.io/SerialCanvas/> ·
+<https://github.com/ra9fael/SerialCanvas>
 
-SerialWeb was created by [Conductance-lab](https://conductance-lab.xyz); this repository is a fork
-of <https://github.com/Conductance-lab/SerialWeb> taken from upstream `v1.6`. The original online
-version is at <https://conductance-lab.xyz/SerialWeb/>. Details:
-[Fork provenance](fork.md).
+SerialCanvas began as [SerialWeb](https://github.com/Conductance-lab/SerialWeb) by
+[Conductance-lab](https://conductance-lab.xyz) (upstream `v1.6`) and has since developed
+independently — it is no longer a fork. The UI design also borrows from
+[PICOTTY](https://github.com/morpheuslord/PICOTTY). Details:
+[Origin & credits](acknowledgements.md).
 
 > The interface is bilingual: choose **中文 / English / 跟随系统 (follow the system)** in the ☰
 > system menu; a first run follows the browser language. Every label in these English docs is
@@ -40,7 +41,7 @@ version is at <https://conductance-lab.xyz/SerialWeb/>. Details:
 | [Data formats](data-formats.md) | `localStorage` keys, config snapshot schema, timeline BIN/TXT/CSV layout, analysis export |
 | [Development](development.md) | Repository layout, the shared-closure constraint, the build script, releasing |
 | [Changelog](CHANGELOG.md) | Release notes per version |
-| [Fork provenance](fork.md) | The original project, the divergence point, what this fork adds, the license |
+| [Origin & credits](acknowledgements.md) | The original project, the UI references (SerialWeb, PICOTTY), the license |
 
 ## Requirements
 
@@ -55,28 +56,28 @@ implement it.
 | Privileges | None. The browser takes the port from the OS. |
 | Storage | `localStorage` is used for settings; the app also reads the clipboard for config import. |
 
-Opening `dist/SerialWeb.html` directly with `file://` works for the interface, but the
+Opening `dist/SerialCanvas.html` directly with `file://` works for the interface, but the
 browser will not grant a serial port from a `file://` page — serve it (see below) when you
 need to connect.
 
 ## Quick start
 
 **1 — Use the hosted build (easiest).** Open
-<https://ra9fael.github.io/SerialWeb/> — this repository's single-file build, published by GitHub
+<https://ra9fael.github.io/SerialCanvas/> — this repository's single-file build, published by GitHub
 Actions. The [original project's build](https://conductance-lab.xyz/SerialWeb/) is a separate
 program with its own version number.
 
 **2 — Or run the single-file build locally.**
 
 ```sh
-python build-release.py            # -> dist/SerialWeb.html
+python build-release.py            # -> dist/SerialCanvas.html
 ```
 
-Take the self-contained `dist/SerialWeb.html`, then either double-click it
+Take the self-contained `dist/SerialCanvas.html`, then either double-click it
 (interface only, no serial access) or serve the folder:
 
 ```sh
-python -m http.server 8000         # -> http://localhost:8000/dist/SerialWeb.html
+python -m http.server 8000         # -> http://localhost:8000/dist/SerialCanvas.html
 ```
 
 **3 — Or run from source.** The repository is plain static files; any static server works.
@@ -114,21 +115,15 @@ Source mode loads `app.core.js`, `app.terminal.js` and `app.main.js` over `fetch
 
 The system menu (☰, top-right) has **Download offline version (下载离线版到本地)**. When the
 app is served over HTTP it re-fetches its own assets and hands you one self-contained HTML
-file, equivalent to `dist/SerialWeb.html`. This is unavailable inside a `file://` copy.
+file, equivalent to `dist/SerialCanvas.html`. This is unavailable inside a `file://` copy.
 
 ## Feedback
 
-- Source, issues and feature requests for this fork: <https://github.com/ra9fael/SerialWeb>
+- Source, issues and feature requests: <https://github.com/ra9fael/SerialCanvas>
 - Manual: these pages — the app's ☰ menu and About dialog link here too.
 
 ## Original project
 
-This repository is a fork; [fork provenance](fork.md) has the divergence point and the license.
-The upstream author's own pages:
-
-- Repository: <https://github.com/Conductance-lab/SerialWeb>
-- Online version: <https://conductance-lab.xyz/SerialWeb/> ·
-  GitHub Pages: <https://conductance-lab.github.io/SerialWeb/>
-- Manual & tutorials: <https://docs.conductance-lab.xyz/工具手册/SerialWeb工具手册>
-- Issue reports: <https://docs.qq.com/form/page/DU1B2RWVyZnJERHdq>
-- Author home page: <https://conductance-lab.xyz>
+SerialCanvas started from SerialWeb and has since developed independently;
+[origin & credits](acknowledgements.md) has the provenance and the license. The original
+project lives at <https://github.com/Conductance-lab/SerialWeb>.

@@ -1,6 +1,6 @@
 # Data formats
 
-Everything SerialWeb writes or persists, so captures and configurations can be read by other
+Everything SerialCanvas writes or persists, so captures and configurations can be read by other
 tools.
 
 - [Browser storage](#browser-storage)
@@ -28,7 +28,7 @@ falls back to defaults independently, so hand-editing or trimming it is safe.
 
 ```jsonc
 {
-  "appVersion": "0.3.0",
+  "appVersion": "0.4.0",
   "receiveContentSchemaVersion": 1,
   "savedAt": 1767100000000,          // Date.now(), informational only
   "theme": "system",                 // "system" | "light" | "dark"

@@ -55,7 +55,7 @@ live state readout; it can show:
 Cancelling the USB chooser is not an error — the log records
 `用户取消了串口选择。` and nothing is toasted.
 
-If exactly **one** port was authorised in a previous session, SerialWeb reconnects to it
+If exactly **one** port was authorised in a previous session, SerialCanvas reconnects to it
 automatically at startup. With zero or several known ports it waits for a click, because
 the browser only allows `requestPort()` from a user gesture.
 
@@ -71,7 +71,7 @@ the browser only allows `requestPort()` from a user gesture.
 
 The receive buffer is requested as `bufferSize: 65536`.
 
-**Changes take effect immediately while connected**, including a baud change: SerialWeb
+**Changes take effect immediately while connected**, including a baud change: SerialCanvas
 closes and re-opens the port (a short discontinuity, `正在应用参数 | 请稍候`). Typing in the
 baud field is debounced 420 ms; leaving the field, pressing enter, picking a preset, or
 changing data/stop/parity/flow-control applies at once. If the port handle disappears
@@ -92,7 +92,7 @@ readouts. Polling stops on disconnect, so a stale `-` after disconnecting is exp
 ### Auto-reconnect (自动重连)
 
 On by default. When the port drops (`disconnect` event, read error, or a blur release),
-SerialWeb retries **indefinitely with no backoff** — a 20 ms wake interval, 30 ms while the
+SerialCanvas retries **indefinitely with no backoff** — a 20 ms wake interval, 30 ms while the
 previous close is still cleaning up — and prefers the original port handle, falling back to
 any `getPorts()` entry whose cached `getInfo()` VID/PID matches. The first 900 ms of
 failures are silent; after that a `重连失败` toast appears. Plug the device back in and the
@@ -108,7 +108,7 @@ manually.
 ### Release on blur (失焦自动断连)
 
 Off by default; enabling it also turns **auto-reconnect on**. When the tab is hidden or the
-window loses focus, SerialWeb closes the port so another program can take it, logging
+window loses focus, SerialCanvas closes the port so another program can take it, logging
 `页面失焦，已释放串口连接。` Refocusing the window and restoring focus reconnects
 automatically. Useful when the same board is shared with an IDE flasher.
 
@@ -177,7 +177,7 @@ Toolbar options:
 selected newline. Leave this off for shells and any device that echoes itself, otherwise
 you see double characters.
 
-**Echo on** — SerialWeb edits the line locally: Enter commits and sends, Backspace erases,
+**Echo on** — SerialCanvas edits the line locally: Enter commits and sends, Backspace erases,
 `Ctrl+U` clears the line, `↑`/`↓` walk the last **200** commands. Other control characters
 are passed through with a `^X` marker.
 
@@ -314,7 +314,7 @@ Formats are specified in [data-formats.md](data-formats.md).
 - **Toasts** auto-dismiss after 10 s, are deduplicated by key, and come in success / warn /
   error kinds.
 - The system menu's **下载离线版到本地** fetches the page plus every asset and downloads one
-  self-contained `SerialWeb串口调试.html` you can keep on a laptop or USB stick. It is
+  self-contained `SerialCanvas串口调试.html` you can keep on a laptop or USB stick. It is
   unavailable from an already-offline copy (`file://`).
 
 ## Settings persistence and config transfer
