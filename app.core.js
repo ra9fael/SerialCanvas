@@ -39,6 +39,76 @@
   const TIMELINE_BIN_MAGIC = new Uint8Array([0x57, 0x53, 0x4c, 0x42, 0x49, 0x4e, 0x31, 0x00]);
   const appEl = document.body;
 
+  /* Binary frame template.
+
+     A binary frame has no textual shape, so a text payload template cannot
+     describe one — which is why the payload template used to be disabled for
+     binary scripts and the A5 layout was hard-coded in the script. This is the
+     replacement: a whitespace-separated list of hex byte groups and
+     placeholders, expanded per tick.
+
+       A5            hex byte group, one or more bytes
+       {t}           temperature x10, clamped to one byte
+       {h}           humidity, rounded and clamped to one byte
+       {n}           tick counter, low byte
+       {sum}         SUM8 of the placeholder-produced bytes so far
+
+     {sum} deliberately covers the placeholder bytes and NOT the literal hex
+     groups. That is the rule the parser applies to a checksum row ("仅覆盖
+     data 行的字节"), and the two have to agree or every simulated frame would
+     decode with a red checksum. Summing everything emitted so far looks more
+     natural and is wrong: it folds the frame header into the checksum.
+
+     The default expands to the exact bytes the A5 script used to hard-code —
+     A5, temp*10, humidity, SUM8 of those two, 5A — and therefore still matches
+     the script's schema byte for byte. */
+  const SIMULATION_FRAME_TEMPLATE_DEFAULT = 'A5 {t} {h} {sum} 5A';
+  const SIMULATION_FRAME_TEMPLATE_MAX = 160;
+  const SIMULATION_FRAME_PLACEHOLDERS = ['{t}', '{h}', '{n}', '{sum}'];
+
+  /* Expands a frame template into bytes.
+
+     Returns the default frame when the template is empty or expands to nothing,
+     so a half-typed template degrades to "still sending the built-in frame"
+     rather than to silence — silence reads as a stalled simulator. */
+  function buildSimulationFrame(template, tick) {
+    const source = String(template || '').trim() || SIMULATION_FRAME_TEMPLATE_DEFAULT;
+    const temp = 21 + Math.sin(tick / 9) * 3.5;
+    const hum = 48 + Math.cos(tick / 7) * 6;
+    const clampByte = (value) => Math.max(0, Math.min(255, Math.round(Number(value) || 0)));
+    const bytes = [];
+    // Placeholder bytes only: the checksum domain, matching the parser.
+    const checksumBytes = [];
+    const pushValue = (value) => {
+      bytes.push(value);
+      checksumBytes.push(value);
+    };
+    source.split(/\s+/).forEach((token) => {
+      if (!token) return;
+      if (token === '{t}') {
+        pushValue(clampByte(temp * 10));
+        return;
+      }
+      if (token === '{h}') {
+        pushValue(clampByte(hum));
+        return;
+      }
+      if (token === '{n}') {
+        pushValue(((Number(tick) || 0) % 256 + 256) % 256);
+        return;
+      }
+      if (token === '{sum}') {
+        pushValue(checksumBytes.reduce((sum, byte) => (sum + byte) & 0xff, 0));
+        return;
+      }
+      const literal = safeHexBytes(token);
+      // Literal bytes are framing, not payload: outside the checksum domain.
+      if (literal.length) bytes.push(...literal);
+    });
+    if (!bytes.length) return buildSimulationFrame(SIMULATION_FRAME_TEMPLATE_DEFAULT, tick);
+    return Uint8Array.from(bytes);
+  }
+
   /* Protocol simulation.
 
      Generates RX locally so the parser, the live results and the charts can be
@@ -47,9 +117,10 @@
      recording and chart painting all behave exactly as they do for real
      traffic. Nothing here re-implements any of that.
 
-     Scripts are fixed rather than user-editable for now. Two are provided:
-     one for the text grammar, one for a binary schema. Both emit a header line
-     naming the rule the user should paste, so the demo is self-explanatory. */
+     Scripts are fixed rather than user-editable for now; what each frame
+     contains is configurable (see the frame template above and the payload
+     template in app.main.js). Three are provided: two text grammars and one
+     binary schema. */
   const SIMULATION_SCRIPTS = {
     'text-sensor': {
       label: '文本：传感器读数',
@@ -93,7 +164,13 @@
          to hand-build a structure to see a decoded value.
 
          Float16 is avoided deliberately: a software decoder plus a hand-built
-         encoder is a lot of surface for a demo. */
+         encoder is a lot of surface for a demo.
+
+         The bytes come from frameTemplate rather than from hard-coded literals,
+         so the frame format is something the user can actually configure. The
+         default expands to exactly the bytes this script used to hard-code:
+         A5, temp*10, humidity, SUM8 of those two, 5A — and it therefore still
+         matches the schema above byte for byte. */
       schema: [
         { kind: 'header', value: 'A5' },
         // nameAuto false: this is a semantic name the script chose, not one
@@ -103,16 +180,8 @@
         { kind: 'checksum', value: 'SUM8', name: 'checksum', nameAuto: false },
         { kind: 'footer', value: '5A' }
       ],
-      build: (tick) => {
-        const temp = 21 + Math.sin(tick / 9) * 3.5;
-        const hum = 48 + Math.cos(tick / 7) * 6;
-        // temp*10 in the high byte, humidity in the low byte.
-        const reading = (Math.round(Math.max(0, Math.min(255, temp * 10))) << 8)
-          | Math.round(Math.max(0, Math.min(255, hum)));
-        const body = [0xa5, (reading >> 8) & 0xff, reading & 0xff];
-        const checksum = body.slice(1).reduce((sum, b) => (sum + b) & 0xff, 0);
-        return Uint8Array.from(body.concat([checksum, 0x5a]));
-      }
+      frameTemplate: SIMULATION_FRAME_TEMPLATE_DEFAULT,
+      build: (tick) => buildSimulationFrame(state.settings.simulation.frameTemplate, tick)
     }
   };
   const SIMULATION_SCRIPT_IDS = Object.keys(SIMULATION_SCRIPTS);
@@ -348,6 +417,8 @@
     simulationInterval: document.getElementById('simulation-interval'),
     simulationBurst: document.getElementById('simulation-burst'),
     simulationTemplate: document.getElementById('simulation-template'),
+    simulationFrameTemplate: document.getElementById('simulation-frame-template'),
+    simulationFramePreview: document.getElementById('simulation-frame-preview'),
     simulationConfigToggle: document.getElementById('simulation-config-toggle'),
     addTimeChartBtn: document.getElementById('add-time-chart-btn'),
     addFftChartBtn: document.getElementById('add-fft-chart-btn'),
@@ -381,6 +452,8 @@
     exportLogBtn: document.getElementById('export-log-btn'),
     termLocalEcho: document.getElementById('term-local-echo'),
     termKeyBar: document.getElementById('term-key-bar'),
+    termKeyBarBody: document.getElementById('term-key-bar-body'),
+    termKeyBarToggle: document.getElementById('term-key-bar-toggle'),
     autoSendTile: document.getElementById('auto-send-tile'),
     conditionSendTile: document.getElementById('condition-send-tile'),
     presetSendTile: document.getElementById('preset-send-tile'),
@@ -505,8 +578,10 @@
         intervalMs: SIMULATION_INTERVAL_DEFAULT,
         burst: SIMULATION_BURST_DEFAULT,
         // Empty means "use the script's own output". When set, only text
-        // scripts use it; a binary frame has no meaningful template.
-        template: SIMULATION_TEMPLATE_DEFAULT
+        // scripts use it; a binary frame has no meaningful text template.
+        template: SIMULATION_TEMPLATE_DEFAULT,
+        // Binary frame layout, in the SIMULATION_FRAME_PLACEHOLDERS notation.
+        frameTemplate: SIMULATION_FRAME_TEMPLATE_DEFAULT
       },
       rxDisplayMode: 'text',
       textEncoding: 'utf-8',
@@ -646,6 +721,9 @@
       // Protocol settings collapse by default; the live results and the
       // simulator sit outside that body and stay visible either way.
       parserPanelOpen: false,
+      // Terminal key bar starts open; the collapse is a per-user choice about
+      // panel height, not a default the app should make for them.
+      termKeyBarOpen: true,
       parserResultsCanExpand: false,
       chartDrag: null,
       sendExtensionHeightOverride: 0,
@@ -2492,6 +2570,19 @@
     scheduleLocalPrefsSave();
   }
 
+  /* Panel placement per layout mode.
+
+     The rail is device connection management and nothing else. The parser
+     panel used to sit in the rail's second row, which put the protocol
+     settings — text rule, hex structure table — in the rail while the graph
+     mode showed the very same panel in the right column. Two homes for one
+     panel is a "which one am I editing" problem, and the rail was paying for
+     settings most sessions never touch.
+
+     So the parser panel always lives in the right column, below the monitor in
+     monitor mode and above the charts in graph mode. The rail holds the
+     connection panel alone, stretched to the full column height so it reads as
+     a deliberate single-purpose rail rather than a half-empty one. */
   function arrangeWorkspacePanels() {
     const {
       leftColumn,
@@ -2506,22 +2597,16 @@
       return;
     }
 
+    expandedLeftTop.appendChild(configPanel);
+    leftColumn.appendChild(expandedLeftTop);
     if (state.layoutExpanded) {
-      expandedLeftTop.appendChild(configPanel);
-      leftColumn.appendChild(expandedLeftTop);
+      // Graph mode hides the monitor (see style.css), so the parser panel and
+      // the charts are the whole right column.
       rightColumn.appendChild(parserPanel);
       rightColumn.appendChild(chartsPanel);
     } else {
-      // The parser panel belongs in the rail's second row by default (it is
-      // what the 1fr row was reserved for), so it has to be appended here.
-      // Left to its original markup position it would precede config-panel and
-      // render above it, since the wrapper is a grid whose rows follow DOM
-      // order. Appended after, it lands below.
-      expandedLeftTop.appendChild(configPanel);
-      expandedLeftTop.appendChild(parserPanel);
-      leftColumn.appendChild(expandedLeftTop);
       rightColumn.appendChild(monitorPanel);
-      rightColumn.appendChild(chartsPanel);
+      rightColumn.appendChild(parserPanel);
     }
   }
 

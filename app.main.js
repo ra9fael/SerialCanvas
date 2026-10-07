@@ -265,6 +265,23 @@
     syncSimulationUi();
   }
 
+  /* Previews the next frame as hex.
+
+     The binary frame template is a small notation, and a notation you cannot
+     see the result of is a notation you cannot debug: a mistyped placeholder or
+     a stray hex digit produced silence before, with nothing on screen to say
+     which. Rendering the frame the simulator is about to send makes the
+     template editable instead of guesswork. */
+  function simulationFramePreview() {
+    const template = String(state.settings.simulation.frameTemplate || '').trim()
+      || SIMULATION_FRAME_TEMPLATE_DEFAULT;
+    const preview = buildSimulationFrame(template, state.settings.simulation.tick);
+    return {
+      hex: bytesToCompactHex(preview),
+      bytes: preview.length
+    };
+  }
+
   function simulationIntervalMs() {
     const value = Number(state.settings.simulation.intervalMs);
     return SIMULATION_INTERVALS.some((item) => item.value === value)
@@ -317,12 +334,26 @@
     if (refs.simulationTemplate && refs.simulationTemplate.value !== String(sim.template || '')) {
       refs.simulationTemplate.value = String(sim.template || '');
     }
-    // A binary frame has no textual shape, so the template would silently do
-    // nothing. Disable it rather than letting it look like it works.
+    // A binary frame has no textual shape, so the payload template would
+    // silently do nothing. Swap the two template fields instead of disabling
+    // one: a binary script gets the frame template, which is the field that
+    // actually describes what it sends.
     const isBinary = Boolean(SIMULATION_SCRIPTS[sim.scriptId]?.schema);
     if (refs.simulationTemplate) {
       refs.simulationTemplate.disabled = isBinary;
       refs.simulationTemplate.closest('.term-field')?.classList.toggle('is-disabled', isBinary);
+    }
+    if (refs.simulationFrameTemplate) {
+      if (refs.simulationFrameTemplate.value !== String(sim.frameTemplate || '')) {
+        refs.simulationFrameTemplate.value = String(sim.frameTemplate || '');
+      }
+      refs.simulationFrameTemplate.disabled = !isBinary;
+      refs.simulationFrameTemplate.closest('.term-field')?.classList.toggle('is-disabled', !isBinary);
+    }
+    if (refs.simulationFramePreview) {
+      const preview = simulationFramePreview();
+      const label = t('下一帧预览');
+      refs.simulationFramePreview.textContent = `${label}: ${preview.hex} (${preview.bytes}B)`;
     }
     if (!refs.simulationStatus) return;
     const yielded = sim.enabled && state.serial.connected;
@@ -335,6 +366,17 @@
     }
     refs.simulationStatus.textContent = parts.join(' · ');
     refs.simulationStatus.classList.toggle('is-yielded', yielded);
+  }
+
+  /* Simulator parameter disclosure, open by default. */
+  function applySimulationConfigOpen(open = true) {
+    const toggle = refs.simulationConfigToggle;
+    const config = toggle?.closest('.simulation-config');
+    if (!toggle || !config) return;
+    config.classList.toggle('is-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    const label = toggle.querySelector('.simulation-config-toggle-text');
+    if (label) label.textContent = open ? t('收起') : t('调参');
   }
 
   function syncBufferUi() {
@@ -2168,7 +2210,11 @@
   const monitorRenderState = {
     signature: '',
     firstId: '',
-    renderedCount: 0
+    renderedCount: 0,
+    // Identity of the row currently drawn for the open RX event, plus the
+    // payload length it was drawn with. See the tail refresh below.
+    tailEventId: '',
+    tailLength: -1
   };
 
   function renderMonitor() {
@@ -2239,6 +2285,27 @@
       while (container.childElementCount > visibleEntries.length) {
         container.removeChild(container.lastElementChild);
       }
+      /* Refresh the row drawn for the still-open RX event.
+
+         The open event has no terminator yet, so its row is rendered once and
+         then keeps growing underneath: a binary frame carries no CR/LF, so every
+         frame the simulator emits lands in the SAME event. The append loop
+         above only handles new rows, so without this the last line froze on
+         whatever the first frame happened to be — the simulator looked stalled
+         while its frame counter kept climbing. Text is unaffected because each
+         line closes its event, but any unterminated burst hits this. */
+      const tailEntry = visibleEntries[visibleEntries.length - 1];
+      const tailRow = container.lastElementChild;
+      if (tailEntry && tailRow && tailEntry.event.metadata?.rxOpen) {
+        const tailLength = String(tailEntry.payload || '').length;
+        if (monitorRenderState.tailEventId !== tailEntry.event.id
+          || monitorRenderState.tailLength !== tailLength) {
+          container.replaceChild(
+            buildMonitorRowElement(tailEntry, showTimestamps),
+            tailRow
+          );
+        }
+      }
     } else {
       const fragment = document.createDocumentFragment();
       if (visibleEntries.length) {
@@ -2254,6 +2321,11 @@
     monitorRenderState.signature = signature;
     monitorRenderState.firstId = headId;
     monitorRenderState.renderedCount = visibleEntries.length;
+    const openTail = visibleEntries[visibleEntries.length - 1];
+    monitorRenderState.tailEventId = openTail?.event.metadata?.rxOpen ? openTail.event.id : '';
+    monitorRenderState.tailLength = monitorRenderState.tailEventId
+      ? String(openTail.payload || '').length
+      : -1;
 
     if (shouldStickToBottom) {
       refs.terminal.scrollTop = refs.terminal.scrollHeight;
@@ -6522,6 +6594,9 @@
         template: typeof source.simulation?.template === 'string'
           ? source.simulation.template.slice(0, SIMULATION_TEMPLATE_MAX)
           : state.settings.simulation.template,
+        frameTemplate: typeof source.simulation?.frameTemplate === 'string'
+          ? source.simulation.frameTemplate.slice(0, SIMULATION_FRAME_TEMPLATE_MAX)
+          : state.settings.simulation.frameTemplate,
         timerId: 0,
         tick: 0
       }
@@ -6563,6 +6638,7 @@
       state.ui.sidebarCollapsed = Boolean(snapshot.layout?.sidebarCollapsed);
       state.ui.parserResultsExpanded = Boolean(snapshot.layout?.parserResultsExpanded);
       state.ui.parserPanelOpen = Boolean(snapshot.layout?.parserPanelOpen);
+      state.ui.termKeyBarOpen = snapshot.layout?.termKeyBarOpen !== false;
       const savedSendExtensionHeight = Number(snapshot.layout?.sendExtensionHeight);
       state.ui.sendExtensionHeightOverride = Number.isFinite(savedSendExtensionHeight) && savedSendExtensionHeight > 0
         ? savedSendExtensionHeight
@@ -6807,6 +6883,9 @@
         // Collapsed by default; persisted because someone who configures a
         // protocol weekly should not reopen it every session.
         parserPanelOpen: Boolean(state.ui.parserPanelOpen),
+        // Absent in older snapshots, hence the !== false: a missing key means
+        // "no preference recorded", which must land on the open default.
+        termKeyBarOpen: state.ui.termKeyBarOpen !== false,
         sendExtensionHeight: Math.max(0, Math.round(Number(state.ui.sendExtensionHeightOverride) || 0))
       },
       // timerId is runtime-only; never let a handle reach storage.
@@ -6819,7 +6898,8 @@
           burst: SIMULATION_BURSTS.includes(Number(state.settings.simulation?.burst))
             ? Number(state.settings.simulation.burst)
             : SIMULATION_BURST_DEFAULT,
-          template: String(state.settings.simulation?.template || '').slice(0, SIMULATION_TEMPLATE_MAX)
+          template: String(state.settings.simulation?.template || '').slice(0, SIMULATION_TEMPLATE_MAX),
+          frameTemplate: String(state.settings.simulation?.frameTemplate || '').slice(0, SIMULATION_FRAME_TEMPLATE_MAX)
         }
       },
       parser: snapshotParserGraphState(),
@@ -8020,10 +8100,26 @@
       state.settings.simulation.template = refs.simulationTemplate.value.slice(0, SIMULATION_TEMPLATE_MAX);
       scheduleLocalPrefsSave();
     });
+    /* The frame template drives the bytes, so it takes effect on the next tick
+       without a restart: emitSimulationFrame() reads it per frame. The preview
+       is refreshed here too, so the field is editable while the simulator runs
+       and the effect is visible immediately. */
+    refs.simulationFrameTemplate?.addEventListener('input', () => {
+      state.settings.simulation.frameTemplate = refs.simulationFrameTemplate.value.slice(0, SIMULATION_FRAME_TEMPLATE_MAX);
+      syncSimulationUi();
+      scheduleLocalPrefsSave();
+    });
+    /* The template lives behind a disclosure, and the complaint that started
+       this was "I cannot find a place to configure the simulated data format".
+       So the config is open by default, and the button collapses it. */
+    applySimulationConfigOpen();
     refs.simulationConfigToggle?.addEventListener('click', () => {
       const config = refs.simulationConfigToggle.closest('.simulation-config');
-      const open = config?.classList.toggle('is-open') ?? false;
+      const open = !(config?.classList.contains('is-open') ?? false);
+      config?.classList.toggle('is-open', open);
       refs.simulationConfigToggle.setAttribute('aria-expanded', String(open));
+      const label = refs.simulationConfigToggle.querySelector('.simulation-config-toggle-text');
+      if (label) label.textContent = open ? t('收起') : t('调参');
     });
     refs.parserPanelToggle?.addEventListener('click', () => {
       toggleParserPanel();
@@ -8049,6 +8145,14 @@
     // Delegated, because the bar is built at runtime from TERM_KEY_GROUPS and a
     // static NodeList would be captured before the buttons exist.
     refs.termKeyBar?.addEventListener('click', (event) => {
+      if (event.target.closest('#term-key-bar-toggle')) {
+        applyTermKeyBarOpen(!state.ui.termKeyBarOpen);
+        // The terminal refits against a shorter panel, so it has to run after
+        // the row is actually hidden.
+        requestAnimationFrame(refitTerminal);
+        scheduleLocalPrefsSave();
+        return;
+      }
       const button = event.target.closest('[data-term-key]');
       if (!button || button.disabled) return;
       event.preventDefault();

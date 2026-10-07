@@ -2051,7 +2051,10 @@ body.layout-expanded .workspace {
 
 .left-column {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  /* One panel in the rail, so a single row. The 1fr row the parser panel used
+     to occupy is gone; leaving it would strand the connection panel in an auto
+     row with dead space beneath. */
+  grid-template-rows: minmax(0, 1fr);
   align-content: stretch;
   min-height: 0;
   overflow: hidden;
@@ -2071,6 +2074,10 @@ body:not(.compact-single) .left-column {
   gap: 8px;
   min-width: 0;
   min-height: 0;
+}
+
+body:not(.compact-single):not(.layout-expanded) .expanded-left-top {
+  height: 100%;
 }
 
 body.layout-expanded:not(.compact-single) .expanded-left-top {
@@ -2169,14 +2176,13 @@ body.layout-expanded:not(.compact-single) .left-column {
   overscroll-behavior: contain;
 }
 
-/* The connection panel sizes to its content so the parser panel below it gets
-   the remaining column height. It used to be height: 100%, which pushed the
-   parser panel out of the column entirely — the rail then scrolled instead of
-   showing both. */
+/* The rail holds the connection panel alone (see arrangeWorkspacePanels), so
+   it now stretches to the full column height instead of hugging its content and
+   leaving a gap underneath. The panel scrolls internally when it overflows. */
 body:not(.layout-expanded):not(.compact-single) .config-panel {
-  height: auto;
+  height: 100%;
   max-height: 100%;
-  align-self: start;
+  align-self: stretch;
 }
 
 body.config-collapsed:not(.compact-single):not(.layout-expanded) .expanded-left-top {
@@ -2184,7 +2190,28 @@ body.config-collapsed:not(.compact-single):not(.layout-expanded) .expanded-left-
 }
 
 body.config-collapsed:not(.compact-single):not(.layout-expanded) .left-column {
-  grid-template-rows: auto;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+body:not(.layout-expanded):not(.compact-single) .right-column {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Monitor mode stacks the monitor above the parser panel.
+
+   flex: 0 0 auto with a max-height, NOT 0 1 auto: a shrinkable parser panel
+   loses to the monitor's flex-grow, so the results card — the thing the panel
+   exists to show — ended up clipped (measured 243px for 324px of content) while
+   the log had room to spare. Sizing the parser to its content up to a share of
+   the column makes the monitor the flexible one, which is the right priority:
+   the results scroll internally once they pass the cap. */
+body:not(.layout-expanded):not(.compact-single) .right-column > .parser-panel {
+  flex: 0 0 auto;
+  max-height: 45%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .config-panel > .panel-head:first-child {
@@ -5613,9 +5640,19 @@ body.compact-single .expanded-left-top {
   align-content: start;
 }
 
-body.compact-single:not(.layout-expanded) .parser-panel,
+/* Compact monitor mode: the parser panel now sits in the right column rather
+   than the rail, so it stays reachable (it holds the simulator) instead of
+   being hidden along with the rail. Bounded so the terminal keeps the majority
+   of a short viewport. */
 body.compact-single:not(.layout-expanded) .charts-panel {
   display: none !important;
+}
+
+body.compact-single:not(.layout-expanded) .right-column > .parser-panel {
+  flex: 0 0 auto;
+  max-height: 46%;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 body.compact-single.layout-expanded .right-column {
@@ -5878,17 +5915,26 @@ body.compact-single.layout-expanded .device-meta-stack {
   }
 }
 
+/* Two fixed rows plus a disclosure head. 44 keys in a single wrapping row made
+   the bar's height depend on the window width, which moved the terminal as the
+   window was resized; the rows keep it constant. */
 .term-key-bar {
   flex: none;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 6px;
   margin-top: 6px;
   padding: 5px 6px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--bg-panel);
+}
+
+.term-key-bar-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
 }
 
 .term-key-bar-label {
@@ -5899,15 +5945,57 @@ body.compact-single.layout-expanded .device-meta-stack {
   flex: none;
 }
 
+.term-key-bar-toggle {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-soft);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: var(--kicker-tracking);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.term-key-bar-toggle:hover {
+  color: var(--accent);
+}
+
+.term-key-bar-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.term-key-bar-body.hidden {
+  display: none;
+}
+
+.term-key-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* Separator between groups inside a row. A DOM node rather than a border on the
+   group, because a wrapped row needs the divider to sit at the end of the line
+   it follows, not stretch down the full group height. */
+.term-key-bar-divider {
+  width: 1px;
+  align-self: stretch;
+  min-height: 18px;
+  background: var(--border);
+  flex: none;
+}
+
 .term-key-bar-group {
   display: flex;
   align-items: center;
   gap: 4px;
-}
-
-.term-key-bar-group + .term-key-bar-group {
-  padding-left: 8px;
-  border-left: 1px solid var(--border);
 }
 
 .term-key {
@@ -6326,8 +6414,8 @@ body.compact-single.layout-expanded .device-meta-stack {
   font-weight: 800;
 }
 
-/* Simulator pacing row. Collapsed by default so the parser results header
-   stays one line; the button expands it. */
+/* Simulator pacing row. Open by default: the data format has to be reachable
+   without hunting for a disclosure. The button collapses it. */
 .simulation-config {
   display: none;
   flex: 1 1 100%;
@@ -6341,6 +6429,16 @@ body.compact-single.layout-expanded .device-meta-stack {
 
 .simulation-config.is-open {
   display: flex;
+}
+
+/* Shows the bytes the current frame template produces. Without it a template
+   typo is indistinguishable from a stalled simulator. */
+.simulation-frame-preview {
+  flex: 1 1 100%;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
 }
 
 .simulation-template-field {

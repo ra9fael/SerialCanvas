@@ -492,6 +492,20 @@
   ];
 
 
+  /* Which row of the key bar each group lands on.
+
+     44 keys in one row wrapped wherever the window happened to end, so the bar
+     changed height as the window resized and shoved the terminal around. Two
+     fixed rows keep the bar's height constant.
+
+     The split is submission/navigation on top and editing/history/control
+     below, which is also the reading order: Enter first, the interrupt keys
+     last. */
+  const TERM_KEY_ROWS = [
+    ['submit', 'nav'],
+    ['edit', 'history', 'control']
+  ];
+
   /* Buttons must work without the terminal holding focus, so this dispatches
      through handleTermData() rather than relying on xterm's onData. */
   function sendTerminalKey(key) {
@@ -500,6 +514,23 @@
     flushTerminalKeyBuffer();
     handleTermData(sequence);
     scheduleLocalPrefsSave();
+  }
+
+  /* Key bar collapse.
+
+     The bar is ~44 buttons and takes real vertical space in a panel whose
+     height the user is usually trying to give to the terminal, so it has to be
+     collapsible. Open by default: the keys are the reason to be in this view,
+     and hiding them behind a control that starts closed reads as a missing
+     feature. Persisted, because the choice is per-user, not per-session. */
+  function applyTermKeyBarOpen(open = Boolean(state.ui.termKeyBarOpen)) {
+    state.ui.termKeyBarOpen = Boolean(open);
+    const body = refs.termKeyBarBody;
+    if (!body) return;
+    body.classList.toggle('hidden', !state.ui.termKeyBarOpen);
+    refs.termKeyBarToggle?.setAttribute('aria-expanded', String(state.ui.termKeyBarOpen));
+    const label = refs.termKeyBarToggle?.querySelector('.term-key-bar-toggle-text');
+    if (label) label.textContent = state.ui.termKeyBarOpen ? t('收起') : t('展开');
   }
 
   /* Builds the key bar from TERM_KEY_GROUPS.
@@ -512,9 +543,13 @@
   function renderTerminalKeyBar() {
     const bar = refs.termKeyBar;
     if (!bar) return;
-    // Keep the label, drop anything a previous render produced.
-    Array.from(bar.children).forEach((node) => {
-      if (!node.classList.contains('term-key-bar-label')) node.remove();
+    // Everything is generated, so clear both rows unconditionally. Keeping the
+    // label is no longer needed: the head is static markup in index.html.
+    const rows = Array.from(bar.querySelectorAll('[data-term-row]'));
+    rows.forEach((row) => { row.replaceChildren(); });
+    const rowFor = new Map();
+    TERM_KEY_ROWS.forEach((groupIds, index) => {
+      groupIds.forEach((id) => rowFor.set(id, index));
     });
     TERM_KEY_GROUPS.forEach((group) => {
       const groupEl = document.createElement('div');
@@ -537,8 +572,20 @@
         button.textContent = spec.label;
         groupEl.appendChild(button);
       });
-      bar.appendChild(groupEl);
+      // A group missing from TERM_KEY_ROWS is a table bug, not a layout one:
+      // dropping it silently would hide bindings the byte table still has.
+      const rowIndex = rowFor.get(group.id);
+      const row = Number.isInteger(rowIndex) ? rows[rowIndex] : null;
+      if (!row) return;
+      if (row.childElementCount) {
+        const divider = document.createElement('span');
+        divider.className = 'term-key-bar-divider';
+        divider.setAttribute('aria-hidden', 'true');
+        row.appendChild(divider);
+      }
+      row.appendChild(groupEl);
     });
+    applyTermKeyBarOpen();
   }
 
   /* ---- Paste debounce ---------------------------------------------------

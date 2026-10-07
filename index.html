@@ -142,8 +142,7 @@
     <main class="workspace">
       <section class="left-column">
         <div class="expanded-left-top">
-        <section class="panel config-panel">
-          <div class="panel-head">
+        <section class="panel config-panel">          <div class="panel-head">
             <div class="config-head-group">
               <div class="panel-title">设备连接管理</div>
             </div>
@@ -363,10 +362,11 @@
                 <span id="simulation-status" class="simulation-status" role="status"></span>
               </div>
               <!-- Pacing and payload. The interval and burst shape what the
-                   stream looks like on the wire; the template is what makes the
+                   stream looks like on the wire; the templates are what makes the
                    simulator useful for testing a real rule rather than the
-                   built-in one. -->
-              <div class="simulation-config">
+                   built-in one. Open by default: a simulator whose data format
+                   cannot be found is not configurable. -->
+              <div class="simulation-config is-open">
                 <label class="term-field" title="两次发送之间的间隔">
                   <span>间隔</span>
                   <select id="simulation-interval"></select>
@@ -379,7 +379,14 @@
                   <span>载荷模板</span>
                   <input id="simulation-template" type="text" maxlength="200" placeholder="使用脚本默认" spellcheck="false" autocomplete="off">
                 </label>
-                <button id="simulation-config-toggle" class="mini-btn simulation-config-toggle" type="button" aria-expanded="false" title="展开模拟参数">调参</button>
+                <label class="term-field simulation-template-field" title="自定义二进制帧格式。十六进制字节与占位符混写：{t} 温度×10、{h} 湿度、{n} 帧序号、{sum} 前面占位符字节的 SUM8 校验和（与结构表一致，不含帧头帧尾）。">
+                  <span>帧模板</span>
+                  <input id="simulation-frame-template" type="text" maxlength="160" placeholder="A5 {t} {h} {sum} 5A" spellcheck="false" autocomplete="off">
+                </label>
+                <span id="simulation-frame-preview" class="simulation-frame-preview" aria-live="off"></span>
+                <button id="simulation-config-toggle" class="mini-btn simulation-config-toggle" type="button" aria-expanded="true" title="收起模拟参数">
+                  <span class="simulation-config-toggle-text">收起</span>
+                </button>
               </div>
               <button id="toggle-parser-results-btn" class="secondary-btn parser-results-toggle" type="button" aria-expanded="false">展开</button>
             </div>
@@ -639,12 +646,27 @@
             <section id="term-interaction" class="term-interaction" aria-label="终端交互模式">
               <div id="term-output" class="term-output" aria-label="串口终端，直接键入内容，回车发送" data-i18n-off></div>
               <!-- Built from TERM_KEY_GROUPS in app.terminal.js, so the bar and
-                   the byte table cannot drift. Static markup for 34 buttons
+                   the byte table cannot drift. Static markup for 44 buttons
                    would be unreadable and would duplicate every binding.
                    Buttons call sendTerminalKey() directly rather than
-                   synthesising keystrokes, so they work without focus. -->
+                   synthesising keystrokes, so they work without focus.
+
+                   The bar is split across two rows by TERM_KEY_ROWS: at 44 keys
+                   a single row wrapped unpredictably and pushed the terminal
+                   around as the window narrowed. The disclosure collapses the
+                   whole bar; it is open by default because the keys are the
+                   point of the terminal view. -->
               <div id="term-key-bar" class="term-key-bar" role="group" aria-label="快捷发送按键">
-                <span class="term-key-bar-label">按键</span>
+                <div class="term-key-bar-head">
+                  <span class="term-key-bar-label">按键</span>
+                  <button id="term-key-bar-toggle" class="term-key-bar-toggle" type="button" aria-expanded="true" aria-controls="term-key-bar-body" title="折叠/展开按键区">
+                    <span class="term-key-bar-toggle-text">收起</span>
+                  </button>
+                </div>
+                <div id="term-key-bar-body" class="term-key-bar-body">
+                  <div class="term-key-bar-row" data-term-row="0"></div>
+                  <div class="term-key-bar-row" data-term-row="1"></div>
+                </div>
               </div>
             </section>
           </div>
