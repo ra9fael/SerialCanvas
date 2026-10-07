@@ -8,7 +8,7 @@ to be a design decision worth revisiting rather than a defect.
 
 ---
 
-## 1. Toolbar controls are four different heights (real)
+## 1. Toolbar controls are four different heights — DONE in `d740064`
 
 Measured at 1600x1000 with a selector that picks up **every** visible control,
 not just the labelled chips:
@@ -55,7 +55,7 @@ work, listed in section 5.
 
 ---
 
-## 2. The protocol settings panel is now redundant
+## 2. The protocol settings panel is now redundant — DONE in `8389db5`
 
 Agreed, and this is a consequence of what we just did rather than a separate
 observation.
@@ -94,7 +94,7 @@ Worth keeping `模拟数据` reachable from the collapsed strip.
 
 ---
 
-## 3. Simulation needs configuration, and the A5 frame does not parse
+## 3. Simulation configuration and the A5 frame — DONE in `5f589b2`, `74562f3`
 
 Two separate problems. The second is a real defect I introduced.
 
@@ -131,7 +131,7 @@ correspond is a claim that needs a test.**
 
 ### Fix for 3a
 
-Two changes, and both are worth doing:
+Three changes, all delivered in `5f589b2` and `74562f3`:
 
 1. **Make the script match a one-row schema** — use `uint16le` for a single data
    field packing both bytes, or emit one data byte. Cheapest, and keeps the
@@ -161,9 +161,9 @@ Currently the only knobs are on/off and script choice (`SIMULATION_SCRIPT_IDS`,
 | **Payload template** (`{temp}`, `{hum}`, `{n}`, `{ts}`) | This is what makes the simulator useful for testing a *real* rule: type your device's actual field names and check the parser handles them | A text input plus a safe expansion step — the result must still go through `encodeText`, never `innerHTML` |
 | **Seed / pattern** (sine, sawtooth, random walk, constant) | Sine and constant look identical after 3 samples; random walk and step changes expose parser edge cases | One `<select>` |
 
-I would ship **interval + burst + template**, and skip seed/pattern — the
-template with `{n}` covers most of what a pattern selector would demonstrate,
-and pattern choice is the least discoverable control in the panel.
+Delivered: **interval + burst + template**, seed/pattern skipped as proposed —
+the template's `{n}` covers most of what a pattern selector would demonstrate,
+and it was the least discoverable control in the panel.
 
 The template expansion is the one with a real risk: it must be a plain string
 substitution on the encoded bytes, never HTML. Everything the simulator emits
@@ -173,7 +173,7 @@ script stay fixed.
 
 ---
 
-## 4. More keys on the bar, including Enter
+## 4. More keys on the bar, including Enter — DONE in `11f962b`
 
 Agreed. 34 keys, and Enter is the conspicuous absence.
 
@@ -198,12 +198,12 @@ behaviour and worth stating: **the button sends a carriage return, not a
 | --- | --- | --- |
 | **Enter** | `\r` | the missing primary key |
 | **Shift-Tab** | `\x1b[Z` | reverse tab — the only way past a completion menu in a readline context |
-| **Ctrl-Enter** / **Alt-Enter** | `\x1b\r` / `\x1b\x0d` | shells bind these to accept-line without executing; useful when a multi-line command is staged |
+| **Alt-Enter** | `\x1b\r` | shells bind it to accept-line without executing |
 | **Ctrl-Left / Ctrl-Right** | `\x1b[1;5D` / `\x1b[1;5C` | word motion; Alt-B/F already cover the classic binding but the arrows are what people actually press |
 | **Insert** | `\x1b[2~` | the remaining navigation key xterm reports |
 | **F1–F4** | `\x1bOP`–`\x1bOS` | xterm's application-mode form; some firmware menus bind these |
 
-That takes the bar from 34 to **44**.
+Delivered: 34 to **44**. One proposal was dropped — see below.
 
 ### Grouping
 
@@ -215,7 +215,14 @@ Current: 导航 / 编辑 / 历史与补全 / 控制字节. Add:
 | 导航 | + Ctrl-Left, Ctrl-Right, Insert, Shift-Tab, F1–F4 |
 
 Enter goes first and alone: it is the only key that submits a line, and burying
-it in a group would be a mistake. It should be the widest button on the bar.
+it in a group would be a mistake. It is the widest button on the bar.
+
+**Ctrl-Enter was dropped after reading xterm's source.** `case 13` there reads
+`o.key = e.altKey ? ESC + CR : CR` — the ctrl flag is never consulted, so
+Ctrl+Enter and Enter emit identical bytes. A button for it would claim a
+distinction that does not exist. Every other sequence in the table was read out
+of `vendor/xterm/xterm.js` rather than assumed, and the readings are recorded
+in the commit message.
 
 ### Two constraints that still hold
 
@@ -236,15 +243,15 @@ it in a group would be a mistake. It should be the widest button on the bar.
 
 ---
 
-## Order
+## Order of work (all delivered)
 
-| # | Item | Risk |
-| --- | --- | --- |
-| 1 | A5 frame decodes (3a) | Low — and it is a defect, so it goes first |
-| 2 | Toolbar heights (1) | Low |
-| 3 | More keys (4) | Low — table extension |
-| 4 | Simulator configuration (3b) | Medium — the template expansion needs care |
-| 5 | Parser panel collapse (2) | Medium — needs a decision on the default |
+| # | Item | Commit | Outcome |
+| --- | --- | --- | --- |
+| 1 | Toolbar heights | `d740064` | 4 heights -> 1; 79px -> 74px |
+| 2 | Parser panel collapse | `8389db5` | Body collapses; results + simulator stay visible |
+| 3a | A5 frame decodes | `5f589b2` | `reading` changes across ticks, checksum green |
+| 3b | Simulator configuration | `74562f3` | Interval / burst / template |
+| 4 | Shortcut coverage | `11f962b` | 34 -> 44 keys, Enter primary |
 
 3a first because it is a defect in something already shipped, and because its
 verification (a changing number instead of `-`) is unambiguous.
