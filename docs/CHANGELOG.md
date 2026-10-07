@@ -17,7 +17,9 @@ Everything numbered `1.x` is an upstream release by the original author,
   workflow follow the new name; AGPL-3.0 and the original copyright are unchanged.
 - The three ☰-menu segmented rows (theme / language / corner) now share one style: two CSS
   `:not()` lists forgot `.menu-corner-opt`, so the corner buttons were laid out as list
-  buttons (36px tall, generic hover background) instead of segmented ones.
+  buttons (36px tall, generic hover background) instead of segmented ones. The sliding accent
+  indicator also carried its 1px border outside `border-box`, so at the third position it
+  slid past the group's right border — visible on 深色模式 / 跟随系统 / 圆润.
 - The simulation chip in the monitor toolbar drops the frame count — it answers "is this stream
   real", and the RX counter already says how much. It shows in both monitor sub-views, including
   the terminal: the chip sits in the toolbar row above the log, not inside the terminal canvas.
