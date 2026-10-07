@@ -4,12 +4,16 @@ Branch: `feat/modernist-ui`. Follow-up to `docs/layout-redesign.md` (`a142a48`).
 
 Every claim below was checked against the source, and the rendering claims
 were measured with `audit/probe-sim-parse.mjs` and
-`audit/measure-buffer.mjs`. Two of the five reports do not survive the check;
-they are corrected rather than implemented as described.
+`audit/measure-buffer.mjs`. Two of the five reports did not survive the check and were corrected rather
+than implemented as described — item 5's dependency was the reverse of what was
+reported, and item 4b's "always off" was correct behaviour with a misleading
+frame. One further claim (that the parser panel needed a visual annotation)
+was disproved during a previous phase and is recorded in
+`docs/layout-redesign.md`.
 
 ---
 
-## 1. The log rebuilds every row on every frame (real defect)
+## 1. The log rebuilds every row on every frame — DONE in `c051b09`
 
 ### Symptom
 
@@ -94,7 +98,7 @@ change; I would land incremental append first, measure, then decide.
 
 ---
 
-## 2. The buffer dropdowns are labelled badly
+## 2. The buffer dropdowns are labelled badly — DONE in `c051b09`
 
 `index.html:455`–`465`. Current labels mix conventions and give no ordering cue:
 
@@ -124,7 +128,7 @@ reintroduces "which is bigger" ambiguity at 100000 vs 100K.
 
 ---
 
-## 3. Shortcut coverage is too thin for fzf and readline
+## 3. Shortcut coverage is too thin for fzf and readline — DONE in `b738790`
 
 Agreed, and the gap is precisely enumerable. Current `TERM_KEY_SEQUENCES`
 (`app.terminal.js:346`) has 14 entries, of which the Ctrl family is only
@@ -182,7 +186,7 @@ each button documents it for free once the tooltip singleton handles it.
 
 ---
 
-## 4. Control sizes and the signal readouts
+## 4. Control sizes and the signal readouts — DONE in `2375f30`
 
 Three separate problems. The first is real, the second is a semantics
 mismatch, the third is the rail whitespace already covered in
@@ -264,7 +268,7 @@ size to collapse *to*.
 
 ---
 
-## 5. Simulation and parsing — the dependency is the other way round
+## 5. Simulation and parsing — DONE in `5a48803`
 
 Measured, and this corrects the report.
 
@@ -308,16 +312,16 @@ That is a larger change and I would not do it without you asking for it.
 
 ---
 
-## Order of work
+## Order of work (all delivered)
 
-| # | Item | Commit | Risk |
+| # | Item | Commit | Outcome |
 | --- | --- | --- | --- |
-| 1 | Incremental monitor render, rebase buffer defaults | `perf(monitor)` | Medium — needs the hash guard done right |
-| 2 | Buffer dropdown labels | `fix(ui)` with 1 | Low |
-| 3 | Control height tokens, signal read-out semantics | `fix(ui)` | Low |
-| 4 | Shortcut coverage + regrouping | `feat(terminal)` | Low — table extension |
-| 5 | Simulated row marking + counter | `feat(parser)` | Low — must follow 1, since it touches the row renderer |
-| 6 | `layout-expanded` made additive, rail collapse | `refactor(layout)` | Medium — behaviour change, needs before/after |
+| 1 | Incremental monitor render | `c051b09` | Append path verified: 5 elements reused, 2 added |
+| 2 | Buffer dropdown labels | `c051b09` | Plain ascending digits; default 256K -> 1M, cap 4M |
+| 3 | Control heights + signal read-outs | `2375f30` | 6 distinct heights -> 3 |
+| 4 | Shortcut coverage | `b738790` | 14 -> 34 keys, four groups, table-driven |
+| 5 | Simulated row marking | `5a48803` | SIM chip + frame counter |
+| 6 | Rail layout, option 2 | `8a0effd` | Parser panel takes the empty row |
 
 1 and 2 are one commit because the label change is a consequence of the new
 defaults. 5 follows 1 because both touch `renderMonitor()`. 6 is last because it
