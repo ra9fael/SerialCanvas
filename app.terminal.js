@@ -348,18 +348,44 @@
      meaningful over a serial line: it reaches the device as 0x12 and is
      interpreted by whatever readline is running there — including fzf, where
      ^R is reverse-i-search and ^T/^N/^P drive the selection. These are the
-     bytes, not browser keybindings, so the browser never sees them. */
+     bytes, not browser keybindings, so the browser never sees them.
+
+     Every sequence below was read out of vendor/xterm/xterm.js rather than
+     assumed, because a wrong guess would send bytes the device never sees:
+
+       Ctrl-arrows  o.key = ESC + "[1;" + (modifier + 1) + "D"   -> 1;5
+       Shift-Tab    case 9: if (e.shiftKey) o.key = ESC + "[Z"
+       Insert       ESC + "[2~"
+       F1-F4        ESC + "OP" / "OQ" / "OR" / "OS"
+       Enter        case 13: o.key = e.altKey ? ESC + CR : CR
+
+     That last line is also why there is no Ctrl-Enter binding: xterm's case 13
+     never consults the ctrl flag, so Ctrl+Enter and Enter produce identical
+     bytes. A button for it would claim a distinction that does not exist. */
   const TERM_KEY_SEQUENCES = {
+    // Submission
+    enter: '\r',
+    'alt-enter': '\x1b\r',
     // Navigation
     up: '\x1b[A',
     down: '\x1b[B',
     right: '\x1b[C',
     left: '\x1b[D',
+    'ctrl-right': '\x1b[1;5C',
+    'ctrl-left': '\x1b[1;5D',
     home: '\x1b[H',
     end: '\x1b[F',
     pageup: '\x1b[5~',
     pagedown: '\x1b[6~',
+    insert: '\x1b[2~',
     delete: '\x1b[3~',
+    'shift-tab': '\x1b[Z',
+    'alt-b': '\x1bb',
+    'alt-f': '\x1bf',
+    f1: '\x1bOP',
+    f2: '\x1bOQ',
+    f3: '\x1bOR',
+    f4: '\x1bOS',
     // Editing
     backspace: '\x7f',
     'ctrl-h': '\x08',
@@ -389,10 +415,18 @@
     escape: '\x1b'
   };
 
-  /* Button grouping for the key bar. Order matters: it is reading order, and
-     the control-byte group is last so the interrupt keys are not hit by
+  /* Button grouping for the key bar. Order is reading order: 提交 first
+     because Enter is the only key that submits a line and burying it in a group
+     would be wrong, and 控制字节 last so the interrupt keys are not hit by
      muscle memory while reaching for editing keys. */
   const TERM_KEY_GROUPS = [
+    {
+      id: 'submit',
+      buttons: [
+        { key: 'enter', label: 'Enter ⏎', tip: 'Enter 回车（遵循换行设置）', wide: true },
+        { key: 'alt-enter', label: 'Alt-⏎', tip: 'Alt-Enter 发送 ESC + CR' }
+      ]
+    },
     {
       id: 'nav',
       buttons: [
@@ -403,7 +437,17 @@
         { key: 'home', label: 'Home', tip: 'Home 行首' },
         { key: 'end', label: 'End', tip: 'End 行尾' },
         { key: 'pageup', label: 'PgUp', tip: 'PgUp 上翻一屏' },
-        { key: 'pagedown', label: 'PgDn', tip: 'PgDn 下翻一屏' }
+        { key: 'pagedown', label: 'PgDn', tip: 'PgDn 下翻一屏' },
+        { key: 'insert', label: 'Ins', tip: 'Insert 插入模式' },
+        { key: 'shift-tab', label: '⇧Tab', tip: 'Shift-Tab 反向补全（越过补全菜单）' },
+        { key: 'ctrl-left', label: '^←', tip: '^← 按词左移' },
+        { key: 'ctrl-right', label: '^→', tip: '^→ 按词右移' },
+        { key: 'alt-b', label: 'Alt-B', tip: 'Alt-B 按词左移（经典绑定）' },
+        { key: 'alt-f', label: 'Alt-F', tip: 'Alt-F 按词右移（经典绑定）' },
+        { key: 'f1', label: 'F1', tip: 'F1（部分固件菜单绑定）' },
+        { key: 'f2', label: 'F2', tip: 'F2' },
+        { key: 'f3', label: 'F3', tip: 'F3' },
+        { key: 'f4', label: 'F4', tip: 'F4' }
       ]
     },
     {
@@ -483,6 +527,8 @@
         button.type = 'button';
         button.className = 'term-key';
         if (group.id === 'control') button.classList.add('term-key-control');
+        if (group.id === 'submit') button.classList.add('term-key-submit');
+        if (spec.wide) button.classList.add('term-key-wide');
         button.dataset.termKey = spec.key;
         // Translated here rather than in the constant: TERM_KEY_GROUPS is
         // evaluated once at load, so a t() call inside it would keep the

@@ -6289,3 +6289,39 @@ body.compact-single.layout-expanded .device-meta-stack {
   background: transparent;
   padding: 0;
 }
+
+/* Submit group: Enter is the only key that submits a line, so it gets the
+   primary treatment and its own group at the front of the bar. */
+.term-key-submit {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.term-key-submit:hover {
+  background: var(--accent-soft);
+}
+
+.term-key-wide {
+  /* The widest key on the bar, so it reads as the primary action when the
+     group is scanned left to right. */
+  min-width: 92px;
+  font-weight: 800;
+}
+
+/* Submit group: Enter is the only key that submits a line, so it gets the
+   primary treatment and its own group at the front of the bar. */
+.term-key-submit {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.term-key-submit:hover {
+  background: var(--accent-soft);
+}
+
+.term-key-wide {
+  /* The widest key on the bar, so it reads as the primary action when the
+     group is scanned left to right. */
+  min-width: 92px;
+  font-weight: 800;
+}
