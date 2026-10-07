@@ -1878,6 +1878,87 @@
     return [getPresetMonitorTag(metadata), getConditionMonitorTag(metadata)].filter(Boolean);
   }
 
+  /* Builds one log row as a detached element.
+
+     Kept separate from the container work below so the append path and the
+     rebuild path cannot produce different markup for the same event. */
+  function buildMonitorRowElement(entry, showTimestamps) {
+    const row = document.createElement('div');
+    const classes = ['log-line', entry.event.direction];
+    if (!showTimestamps) classes.push('no-stamp');
+    row.className = classes.join(' ');
+    if (showTimestamps) {
+      const stamp = document.createElement('span');
+      stamp.className = 'stamp';
+      stamp.textContent = `[${entry.stamp}]`;
+      row.appendChild(stamp);
+    }
+    const dir = document.createElement('span');
+    dir.className = 'dir';
+    dir.textContent = entry.directionLabel;
+    row.appendChild(dir);
+    const payload = document.createElement('span');
+    payload.className = 'payload';
+    payload.textContent = entry.payload || '';
+    row.appendChild(payload);
+    (entry.inlineTags || []).forEach((tag) => {
+      const chip = document.createElement('span');
+      chip.className = `preset-inline-tag preset-tag-${tag.tone}`;
+      chip.textContent = ` ${tag.text}`;
+      payload.appendChild(chip);
+    });
+    return row;
+  }
+
+  function buildMonitorEmptyElement() {
+    const empty = document.createElement('div');
+    empty.className = 'panel-subtitle';
+    empty.dataset.emptyLog = 'true';
+    empty.textContent = t('当前没有日志内容');
+    return empty;
+  }
+
+  /* Incremental monitor rendering.
+
+     renderMonitor() used to assign innerHTML over the whole log, which made the
+     buffer cap a frame-budget decision: cost scaled with the entire buffer, so
+     the 256K/512K figures measured that implementation rather than the data.
+
+     RX is append-only and trimLiveEvents() removes from the head, so the common
+     case is "add rows at the tail, maybe drop some from the front". Only the
+     four inputs below alter every row and force a full rebuild:
+
+       - showTimestamps  (state.settings.appendTimestamp && !state.layoutExpanded)
+       - showRawHex      (state.settings.rxDisplayMode)
+       - font size       (--log-size, applied via CSS so no rebuild is needed)
+       - text encoding   (state.settings.textEncoding, changes decoded text)
+
+     The font size is deliberately absent: it is a CSS custom property, so the
+     same row elements restyle without being rebuilt. The signature below is
+     therefore what decides rebuild vs append. */
+
+  /* Signature of everything that alters the MARKUP of an existing row.
+
+     It deliberately excludes the tail id and the count: new rows arriving is
+     exactly the case the append path exists for, so including them would make
+     the signature change on every frame and the append branch unreachable.
+
+     What it must catch is anything that changes how the rows already on screen
+     read: the timestamp prefix, hex vs text, and the decoded text itself. */
+  function computeMonitorRenderSignature(showTimestamps, showRawHex) {
+    return [
+      showTimestamps ? 'ts' : 'nots',
+      showRawHex ? 'hex' : 'text',
+      state.settings.textEncoding
+    ].join('|');
+  }
+
+  const monitorRenderState = {
+    signature: '',
+    firstId: '',
+    renderedCount: 0
+  };
+
   function renderMonitor() {
     if (shouldPreserveTerminalSelectionForMonitor()) {
       renderTerminalJumpButton();
@@ -1925,25 +2006,43 @@
       visibleEntries.unshift(entry);
       totalChars = nextTotal;
     }
-    const parts = [];
-    for (const { event, directionLabel, stamp, payload, inlineTags } of visibleEntries) {
-      const classes = [
-        'log-line',
-        event.direction,
-        ...(showTimestamps ? [] : ['no-stamp'])
-      ].join(' ');
-      const presetTagHtml = (inlineTags || [])
-        .map((tag) => ` <span class="preset-inline-tag preset-tag-${escapeHtml(tag.tone)}">${escapeHtml(tag.text)}</span>`)
-        .join('');
-      parts.push(`
-        <div class="${escapeHtml(classes)}">
-          ${showTimestamps ? `<span class="stamp">[${escapeHtml(stamp)}]</span>` : ''}
-          <span class="dir">${escapeHtml(directionLabel)}</span>
-          <span class="payload">${escapeHtml(payload)}${presetTagHtml}</span>
-        </div>
-      `);
+    const signature = computeMonitorRenderSignature(showTimestamps, showRawHex);
+    const container = refs.terminal;
+    const headId = visibleEntries[0]?.event.id || '';
+    // Append is safe only when the window still starts where it did: the rows
+    // already in the DOM correspond to visibleEntries[0 .. renderedCount-1].
+    // A changed head id means trimLiveEvents() dropped rows, so reconcile.
+    const canAppend = signature === monitorRenderState.signature
+      && headId === monitorRenderState.firstId
+      && container.childElementCount > 0
+      && !container.querySelector('[data-empty-log]');
+
+    if (canAppend) {
+      const rendered = monitorRenderState.renderedCount;
+      for (let index = rendered; index < visibleEntries.length; index += 1) {
+        container.appendChild(buildMonitorRowElement(visibleEntries[index], showTimestamps));
+      }
+      // A frozen timeline can shrink the source without changing the head, so
+      // reconcile the tail rather than trusting the previous count.
+      while (container.childElementCount > visibleEntries.length) {
+        container.removeChild(container.lastElementChild);
+      }
+    } else {
+      const fragment = document.createDocumentFragment();
+      if (visibleEntries.length) {
+        visibleEntries.forEach((entry) => {
+          fragment.appendChild(buildMonitorRowElement(entry, showTimestamps));
+        });
+      } else {
+        fragment.appendChild(buildMonitorEmptyElement());
+      }
+      container.replaceChildren(fragment);
     }
-    refs.terminal.innerHTML = parts.join('') || `<div class="panel-subtitle">${escapeHtml(t('当前没有日志内容'))}</div>`;
+
+    monitorRenderState.signature = signature;
+    monitorRenderState.firstId = headId;
+    monitorRenderState.renderedCount = visibleEntries.length;
+
     if (shouldStickToBottom) {
       refs.terminal.scrollTop = refs.terminal.scrollHeight;
     }

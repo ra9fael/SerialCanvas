@@ -450,19 +450,19 @@
             </div>
             <div id="buffer-toolbar-controls" class="term-toolbar-controls">
               <label class="term-field" title="xterm 回滚缓冲保留的行数">
-                <span>缓冲</span>
+                <span>回滚行数</span>
                 <select id="term-scrollback">
-                  <option value="5000">5 千</option>
-                  <option value="20000" selected>2 万</option>
-                  <option value="100000">10 万</option>
+                  <option value="5000">5000</option>
+                  <option value="20000" selected>20000</option>
+                  <option value="100000">100000</option>
                 </select>
               </label>
-              <label class="term-field" title="收发日志保留的字符总量。渲染整份日志的开销随此值线性增长，52 万接近一帧预算">
-                <span>日志</span>
+              <label class="term-field" title="收发日志保留的字符总量。追加渲染后上限由内存决定，而非每帧重建的耗时">
+                <span>日志字符</span>
                 <select id="live-buffer-size">
-                  <option value="65536">64K</option>
-                  <option value="262144" selected>256K</option>
-                  <option value="524288">512K</option>
+                  <option value="262144">262144</option>
+                  <option value="1048576" selected>1048576</option>
+                  <option value="4194304">4194304</option>
                 </select>
               </label>
             </div>

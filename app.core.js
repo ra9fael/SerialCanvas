@@ -167,20 +167,25 @@
 
      The log budget is a CHARACTER count, not a line count, because line widths
      vary by an order of magnitude between a binary dump and a short text reply.
-     The numbers come from measurement, not guesswork: renderMonitor() rebuilds
-     the whole log with innerHTML, so cost scales linearly with the buffer.
-     Median of five rebuilds on realistic 62-character RX lines:
+
+     These numbers changed when renderMonitor() stopped assigning innerHTML over
+     the whole log. The previous table below was measured against a full
+     rebuild per frame, which made the cap a frame-budget decision:
 
        128K chars ->  8.5k DOM nodes ->  3.1ms
        256K       -> 17k             ->  7.0ms
        512K       -> 34k             -> 13.3ms   (a 60Hz frame is 16.7ms)
-        1M        -> 68k             -> 26.6ms   drops frames
+        1M        -> 68k             -> 26.6ms   dropped frames
 
-     So 512K is the ceiling and 256K is the largest value with real headroom.
-     The previous constant was 8K, ~32x more conservative than the rendering
-     cost requires. */
-  const LIVE_BUFFER_SIZES = [65536, 262144, 524288];
-  const LIVE_BUFFER_DEFAULT = 262144;
+     Appending a row costs one createElement regardless of buffer size, so that
+     ceiling no longer exists and the limit is memory instead. The default moves
+     from 256K to 1M.
+
+     Note the remaining cost is O(buffer) but not DOM work: getActiveEvents()
+     plus the visible-window loop still walk every entry each frame. That is why
+     the default sits well below the 4M cap rather than at it. */
+  const LIVE_BUFFER_SIZES = [262144, 1048576, 4194304];
+  const LIVE_BUFFER_DEFAULT = 1048576;
   const TERMINAL_SCROLLBACK_SIZES = [5000, 20000, 100000];
   const TERMINAL_SCROLLBACK_DEFAULT = 20000;
   const TERMINAL_READY_HINT_TEXT = '—— 串口终端已就绪：直接键入即发送（Ctrl+C/Ctrl+D/方向键等原样透传给设备）；如设备不回显，请打开“回显” ——';
