@@ -219,3 +219,53 @@ Practical notes:
   ([user guide](user-guide.md#terminal-view)).
 - Text parsing honours the **字符编码** setting; hex parsing does not, because it reads raw
   bytes.
+
+## Simulation source
+
+The simulator generates RX locally so the parser, the live results and the
+charts can be exercised with no device attached. Frames go through the same
+`queueRxBytes()` entry point the serial reader uses, so line splitting,
+parsing, recording and chart painting behave exactly as they do for real
+traffic. It yields automatically while a port is open.
+
+It is the first of the three parts of the parse view (simulator → parser →
+charts), because it is where the bytes come from.
+
+### Scripts
+
+| Script | Sends |
+| --- | --- |
+| 文本：传感器读数 | `temp=21.0,humid=54;` |
+| 文本：JSON 负载 | `{"device":"sim-01","uptime":0,"temp":21.0}` |
+| 二进制：A5 帧 | `A5 <t> <h> <sum> 5A` |
+
+Selecting the binary script also fills the structure table with the schema it
+needs, so it decodes without hand-building one first.
+
+### Payload and frame templates
+
+Each box is seeded with the chosen script's default, so the format is visible
+and editable instead of hinted at. Only the template that applies to the
+current script is shown — text scripts get the payload template, the binary
+script gets the frame template — and 恢复默认 puts the default back. A template
+you typed survives a script switch.
+
+Payload placeholders (text scripts):
+
+| Placeholder | Expands to |
+| --- | --- |
+| `{temp}` | temperature, one decimal |
+| `{hum}` | humidity, integer |
+| `{n}` | frame counter |
+| `{tick}` | the same value as `{n}`, kept as an alias |
+| `{ts}` | total frames emitted this session |
+
+Frame placeholders (binary script): `{t}` temperature ×10, `{h}` humidity,
+`{n}` counter, `{sum}` SUM8 of the placeholder-produced bytes only — the same
+domain the checksum row uses, so the frame decodes with a valid checksum.
+Literal hex groups (the `A5` header, the `5A` footer) are framing and are not
+summed.
+
+下一帧预览 shows the exact text or bytes the next tick will emit, expanded with
+the current template. Without it a mistyped placeholder is indistinguishable
+from a stalled simulator.

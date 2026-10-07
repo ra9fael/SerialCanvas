@@ -2076,7 +2076,13 @@ body:not(.compact-single) .left-column {
    — is parse-view content, and the monitor panel is monitor-view content. A
    body class rather than a conditional at each site, so the panel arrangement,
    the collapse state and the monitor chip all read the same single fact. */
-body:not(.layout-expanded) .parser-panel {
+/* The parse view is three panels: this one, the parser (settings + results)
+   and the charts. All three are parse-view-only; the body class is the single
+   fact they read. The simulator used to be a section inside .parser-panel,
+   which hid it here only by inheritance — as a sibling it needs its own rule,
+   or it leaks into the monitor view. */
+body:not(.layout-expanded) .parser-panel,
+body:not(.layout-expanded) .simulator-panel {
   display: none !important;
 }
 
@@ -2084,10 +2090,13 @@ body.layout-expanded .monitor-panel {
   display: none !important;
 }
 
-/* Simulator: a section inside the parse panel, not a panel of its own, so it
-   has no border or padding of its own and reads as part of the pipeline. */
+/* A panel of its own now, not a section inside the parse panel: it is where the
+   bytes come from, which is a different job from deciding how to decode them.
+   The border, radius and padding come from .panel; this adds the internal
+   layout — a head row and a body stacked, content-sized. */
 .simulator-panel {
   display: grid;
+  grid-template-rows: auto auto;
   align-content: start;
   gap: 8px;
   min-height: 0;
@@ -2231,6 +2240,7 @@ body.layout-expanded:not(.compact-single) .left-column {
 
 .config-panel,
 .parser-panel,
+.simulator-panel,
 .charts-panel,
 .stats-panel,
 .monitor-panel {
@@ -2945,12 +2955,14 @@ body:not(.layout-expanded) .charts-panel {
 }
 
 body.layout-expanded .parser-panel,
+body.layout-expanded .simulator-panel,
 body.layout-expanded .charts-panel {
   display: grid;
   gap: 8px;
 }
 
 body.layout-expanded:not(.compact-single) .parser-panel,
+body.layout-expanded:not(.compact-single) .simulator-panel,
 body.layout-expanded:not(.compact-single) .charts-panel {
   height: auto;
   max-height: none;
@@ -2983,6 +2995,7 @@ body.layout-expanded:not(.compact-single) .charts-panel {
 }
 
 body.layout-expanded .parser-panel,
+body.layout-expanded .simulator-panel,
 body.layout-expanded .charts-panel {
   flex: 0 0 auto;
   height: auto;
@@ -5724,6 +5737,7 @@ body.compact-single.layout-expanded .right-column {
 }
 
 body.compact-single.layout-expanded .parser-panel,
+body.compact-single.layout-expanded .simulator-panel,
 body.compact-single.layout-expanded .charts-panel {
   overflow: visible;
   flex: 0 0 auto;
@@ -6528,9 +6542,85 @@ body.compact-single.layout-expanded .device-meta-stack {
   letter-spacing: 0.02em;
 }
 
+/* A template block: label + 恢复默认, the input, and the placeholder legend
+   under it. Stacked rather than the side-by-side .term-field shape, because a
+   template is a sentence and needs the full width, and because the legend has
+   to be visible — a format you can only reach by hovering is the reason this
+   field went unused.
+
+   .term-field is deliberately NOT used here: it is a bordered inline-flex chip
+   for a small labelled control, which is the wrong shape for three stacked
+   rows. */
 .simulation-template-field {
-  flex: 1 1 200px;
-  min-width: 160px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.simulation-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.simulation-field-head label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-soft);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.simulation-reset-btn {
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: var(--kicker-tracking);
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.simulation-reset-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* One span per placeholder, with the separator drawn here rather than typed
+   into the markup: a literal " · " inside the line becomes part of the text
+   node, and "温度 ·" is not a string any dictionary will ever hold. */
+.simulation-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 5px;
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+.simulation-legend-lead {
+  font-weight: 700;
+}
+
+.simulation-legend-item + .simulation-legend-item::before {
+  content: '·';
+  margin-right: 4px;
+  color: var(--border-strong);
+}
+
+.simulation-legend code {
+  margin-right: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-soft);
+  white-space: nowrap;
 }
 
 .simulation-template-field input {
@@ -6552,21 +6642,18 @@ body.compact-single.layout-expanded .device-meta-stack {
   box-shadow: var(--focus-ring);
 }
 
-/* A binary frame has no textual shape, so the template cannot apply. */
-.simulation-template-field.is-disabled {
-  opacity: 0.5;
-}
-
-.simulation-template-field.is-disabled input {
-  cursor: not-allowed;
-}
-
 /* Parser panel collapse.
 
    The body holds configuration only — the live results sit outside it — so
    collapsing reclaims the height without hiding anything a user needs while
-   watching data. The simulator moved to its own panel in the rail, so it is no
-   longer part of this panel at all.
+   watching data. The simulator is a panel of its own now, so it is no longer
+   part of this panel at all.
+
+   This comment had no closing marker, which silently commented out every rule
+   that followed it to the end of the file — the toggle's whole appearance and
+   the chevron rotation included. The collapse still worked, but only because
+   the generic .hidden rule also hides the body; the button itself was
+   unstyled. */
 .parser-panel-toggle {
   display: inline-flex;
   align-items: center;

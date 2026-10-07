@@ -244,6 +244,11 @@
     // so line splitting and parsing behave exactly as they would on the wire.
     const burst = SIMULATION_BURSTS.includes(Number(sim.burst)) ? Number(sim.burst) : SIMULATION_BURST_DEFAULT;
     for (let index = 0; index < burst; index += 1) {
+      // Captured before the increment: the template's {n}/{tick} must agree
+      // with the counter the frame itself was built from. It used to be read
+      // after `sim.tick += 1`, so a JSON payload reported an uptime one ahead
+      // of the frame that carried it.
+      const tick = sim.tick;
       const frame = script.build(sim.tick);
       sim.tick += 1;
       if (sim.tick > SIMULATION_MAX_TICKS) sim.tick = 0;
@@ -256,7 +261,7 @@
       const payload = isBinaryScript
         ? frame
         : encodeText(
-          applySimulationTemplate(decodeBytes(frame, state.settings.textEncoding), sim.tick),
+          applySimulationTemplate(decodeBytes(frame, state.settings.textEncoding), tick),
           state.settings.textEncoding
         );
       sim.totalFrames += 1;
@@ -265,21 +270,41 @@
     syncSimulationUi();
   }
 
-  /* Previews the next frame as hex.
+  /* Previews the next frame.
 
-     The binary frame template is a small notation, and a notation you cannot
-     see the result of is a notation you cannot debug: a mistyped placeholder or
-     a stray hex digit produced silence before, with nothing on screen to say
-     which. Rendering the frame the simulator is about to send makes the
-     template editable instead of guesswork. */
-  function simulationFramePreview() {
-    const template = String(state.settings.simulation.frameTemplate || '').trim()
-      || SIMULATION_FRAME_TEMPLATE_DEFAULT;
-    const preview = buildSimulationFrame(template, state.settings.simulation.tick);
-    return {
-      hex: bytesToCompactHex(preview),
-      bytes: preview.length
-    };
+     Both template notations are small, and a notation you cannot see the result
+     of is a notation you cannot debug: a mistyped placeholder or a stray hex
+     digit produced silence before, with nothing on screen to say which.
+     Rendering the frame the simulator is about to send makes the template
+     editable instead of guesswork.
+
+     Binary previews as hex, text previews as the line itself — the text path
+     runs the real expansion (script bytes → payload template), so what is shown
+     is what will actually be queued, not a second implementation of it. */
+  function simulationNextFrame() {
+    const sim = state.settings.simulation;
+    const script = SIMULATION_SCRIPTS[sim.scriptId];
+    if (script?.schema) {
+      const template = String(sim.frameTemplate || '').trim() || SIMULATION_FRAME_TEMPLATE_DEFAULT;
+      const bytes = buildSimulationFrame(template, sim.tick);
+      return { text: bytesToCompactHex(bytes), bytes: bytes.length };
+    }
+    const built = script ? script.build(sim.tick) : new Uint8Array(0);
+    const expanded = applySimulationTemplate(decodeBytes(built, state.settings.textEncoding), sim.tick);
+    const payload = expanded.replace(/\r?\n$/, '').replace(/\r/g, '\\r');
+    return { text: payload, bytes: encodeText(expanded, state.settings.textEncoding).length };
+  }
+
+  /* Seeds the template boxes with the chosen script's defaults.
+
+     Only while the user has not typed in a box: a template they wrote survives
+     a script switch. Both boxes are seeded, not just the visible one, so
+     switching to the binary script shows a filled frame template rather than
+     an empty box that would fall back to the built-in frame. */
+  function seedSimulationTemplates() {
+    const sim = state.settings.simulation;
+    if (!sim.templateDirty) sim.template = simulationTemplateDefault(sim.scriptId);
+    if (!sim.frameTemplateDirty) sim.frameTemplate = simulationFrameTemplateDefault(sim.scriptId);
   }
 
   function simulationIntervalMs() {
@@ -334,26 +359,22 @@
     if (refs.simulationTemplate && refs.simulationTemplate.value !== String(sim.template || '')) {
       refs.simulationTemplate.value = String(sim.template || '');
     }
-    // A binary frame has no textual shape, so the payload template would
-    // silently do nothing. Swap the two template fields instead of disabling
-    // one: a binary script gets the frame template, which is the field that
-    // actually describes what it sends.
+    // A binary frame has no textual shape and a text line has no hex layout, so
+    // each script has exactly one template that means anything. Show that one
+    // and hide the other rather than disabling it: a disabled field is a dead
+    // end that tells the user nothing about why, and it was the reason the
+    // payload template read as unusable.
     const isBinary = Boolean(SIMULATION_SCRIPTS[sim.scriptId]?.schema);
-    if (refs.simulationTemplate) {
-      refs.simulationTemplate.disabled = isBinary;
-      refs.simulationTemplate.closest('.term-field')?.classList.toggle('is-disabled', isBinary);
+    document.querySelectorAll('[data-sim-template]').forEach((field) => {
+      const wantsText = field.dataset.simTemplate === 'text';
+      field.classList.toggle('hidden', wantsText ? isBinary : !isBinary);
+    });
+    if (refs.simulationFrameTemplate && refs.simulationFrameTemplate.value !== String(sim.frameTemplate || '')) {
+      refs.simulationFrameTemplate.value = String(sim.frameTemplate || '');
     }
-    if (refs.simulationFrameTemplate) {
-      if (refs.simulationFrameTemplate.value !== String(sim.frameTemplate || '')) {
-        refs.simulationFrameTemplate.value = String(sim.frameTemplate || '');
-      }
-      refs.simulationFrameTemplate.disabled = !isBinary;
-      refs.simulationFrameTemplate.closest('.term-field')?.classList.toggle('is-disabled', !isBinary);
-    }
-    if (refs.simulationFramePreview) {
-      const preview = simulationFramePreview();
-      const label = t('下一帧预览');
-      refs.simulationFramePreview.textContent = `${label}: ${preview.hex} (${preview.bytes}B)`;
+    if (refs.simulationPreview) {
+      const preview = simulationNextFrame();
+      refs.simulationPreview.textContent = `${t('下一帧预览')}: ${preview.text} (${preview.bytes}B)`;
     }
     const yielded = sim.enabled && state.serial.connected;
     const parts = [];
@@ -6632,6 +6653,11 @@
         frameTemplate: typeof source.simulation?.frameTemplate === 'string'
           ? source.simulation.frameTemplate.slice(0, SIMULATION_FRAME_TEMPLATE_MAX)
           : state.settings.simulation.frameTemplate,
+        // Absent in snapshots written before the seeded defaults existed. Those
+        // carry an empty template, which means "script default" — so they are
+        // NOT dirty and get seeded on load.
+        templateDirty: Boolean(source.simulation?.templateDirty),
+        frameTemplateDirty: Boolean(source.simulation?.frameTemplateDirty),
         timerId: 0,
         tick: 0
       }
@@ -6673,6 +6699,7 @@
       state.ui.sidebarCollapsed = Boolean(snapshot.layout?.sidebarCollapsed);
       state.ui.parserResultsExpanded = Boolean(snapshot.layout?.parserResultsExpanded);
       state.ui.parserPanelOpen = Boolean(snapshot.layout?.parserPanelOpen);
+      state.ui.simulatorPanelOpen = snapshot.layout?.simulatorPanelOpen !== false;
       state.ui.termKeyBarOpen = snapshot.layout?.termKeyBarOpen !== false;
       const savedSendExtensionHeight = Number(snapshot.layout?.sendExtensionHeight);
       state.ui.sendExtensionHeightOverride = Number.isFinite(savedSendExtensionHeight) && savedSendExtensionHeight > 0
@@ -6920,6 +6947,7 @@
         parserPanelOpen: Boolean(state.ui.parserPanelOpen),
         // Absent in older snapshots, hence the !== false: a missing key means
         // "no preference recorded", which must land on the open default.
+        simulatorPanelOpen: state.ui.simulatorPanelOpen !== false,
         termKeyBarOpen: state.ui.termKeyBarOpen !== false,
         sendExtensionHeight: Math.max(0, Math.round(Number(state.ui.sendExtensionHeightOverride) || 0))
       },
@@ -6934,7 +6962,9 @@
             ? Number(state.settings.simulation.burst)
             : SIMULATION_BURST_DEFAULT,
           template: String(state.settings.simulation?.template || '').slice(0, SIMULATION_TEMPLATE_MAX),
-          frameTemplate: String(state.settings.simulation?.frameTemplate || '').slice(0, SIMULATION_FRAME_TEMPLATE_MAX)
+          frameTemplate: String(state.settings.simulation?.frameTemplate || '').slice(0, SIMULATION_FRAME_TEMPLATE_MAX),
+          templateDirty: Boolean(state.settings.simulation?.templateDirty),
+          frameTemplateDirty: Boolean(state.settings.simulation?.frameTemplateDirty)
         }
       },
       parser: snapshotParserGraphState(),
@@ -8100,6 +8130,10 @@
     refs.simulationScript?.addEventListener('change', () => {
       const next = refs.simulationScript.value;
       state.settings.simulation.scriptId = SIMULATION_SCRIPT_IDS.includes(next) ? next : 'text-sensor';
+      // Re-seed the template box with the new script's own format, unless the
+      // user has written one: showing "temp={temp},humid={hum};" after picking
+      // the JSON script is worse than showing nothing.
+      seedSimulationTemplates();
       applySimulationScriptConfig(state.settings.simulation.scriptId);
       // Restart so the new script takes effect immediately rather than on the
       // next enable.
@@ -8132,7 +8166,26 @@
       scheduleLocalPrefsSave();
     });
     refs.simulationTemplate?.addEventListener('input', () => {
-      state.settings.simulation.template = refs.simulationTemplate.value.slice(0, SIMULATION_TEMPLATE_MAX);
+      const sim = state.settings.simulation;
+      sim.template = refs.simulationTemplate.value.slice(0, SIMULATION_TEMPLATE_MAX);
+      // From here on this template is theirs, and switching scripts must not
+      // replace it.
+      sim.templateDirty = true;
+      syncSimulationUi();
+      scheduleLocalPrefsSave();
+    });
+    refs.simulationTemplateReset?.addEventListener('click', () => {
+      const sim = state.settings.simulation;
+      sim.template = simulationTemplateDefault(sim.scriptId);
+      sim.templateDirty = false;
+      syncSimulationUi();
+      scheduleLocalPrefsSave();
+    });
+    refs.simulationFrameTemplateReset?.addEventListener('click', () => {
+      const sim = state.settings.simulation;
+      sim.frameTemplate = simulationFrameTemplateDefault(sim.scriptId);
+      sim.frameTemplateDirty = false;
+      syncSimulationUi();
       scheduleLocalPrefsSave();
     });
     /* The frame template drives the bytes, so it takes effect on the next tick
@@ -8140,12 +8193,18 @@
        is refreshed here too, so the field is editable while the simulator runs
        and the effect is visible immediately. */
     refs.simulationFrameTemplate?.addEventListener('input', () => {
-      state.settings.simulation.frameTemplate = refs.simulationFrameTemplate.value.slice(0, SIMULATION_FRAME_TEMPLATE_MAX);
+      const sim = state.settings.simulation;
+      sim.frameTemplate = refs.simulationFrameTemplate.value.slice(0, SIMULATION_FRAME_TEMPLATE_MAX);
+      sim.frameTemplateDirty = true;
       syncSimulationUi();
       scheduleLocalPrefsSave();
     });
     refs.parserPanelToggle?.addEventListener('click', () => {
       toggleParserPanel();
+      scheduleLocalPrefsSave();
+    });
+    refs.simulatorPanelToggle?.addEventListener('click', () => {
+      toggleSimulatorPanel();
       scheduleLocalPrefsSave();
     });
     refs.layoutToggleBtn.addEventListener('click', toggleLayoutMode);
@@ -8736,6 +8795,7 @@
     updateSerialStatus();
     applyMonitorView();
     applyParserPanelOpen();
+    applySimulatorPanelOpen();
     renderTimelineSelect();
     renderStats();
     renderTimelineBar();
@@ -8749,6 +8809,9 @@
   function initializeDefaults() {
     localStorage.removeItem('wsl-layout');
     applyLocalPrefsSnapshot(readLocalPrefs());
+    // Before the first paint, so the template boxes open with a real example
+    // rather than with a blank field and a hint.
+    seedSimulationTemplates();
     // The parser panel's collapsed state is only reflected in the DOM by
     // syncUserConfigControls(), which the config-restore path calls but boot
     // does not. Without this the panel renders open on every load regardless

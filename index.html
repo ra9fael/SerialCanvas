@@ -282,6 +282,102 @@
           </div>
         </section>
 
+        <!-- Part 1 of 3 in the parse view: where the bytes come FROM.
+
+             It is a data SOURCE for the parser, so it belongs with the thing it
+             feeds — but as a part of its own, not as a section inside the
+             settings. Three parts then read top to bottom as the pipeline:
+             this one supplies something to decode, the parser says how to
+             decode and shows what came out, the charts plot it. It was in the
+             rail beside the connection for one commit, which split "generate
+             bytes" and "decode bytes" across two screens. -->
+        <section class="panel simulator-panel">
+          <div class="panel-head">
+            <div class="simulator-head">
+              <div class="panel-title">模拟数据源
+                <span class="help-icon" data-tip-docs="docs/parser.md#simulation-source" data-tip="不开串口也能验证解析与图表：模拟数据走同一条 RX 通道，&#10;解析、录制、绘图全链路与真实串口完全一致。&#10;&#10;用法：&#10;1. 勾选「启用」&#10;2. 选脚本：文本 / JSON / 二进制帧&#10;3. 要自定义格式就改模板——框里已经填着该脚本的默认模板&#10;4. 看「下一帧预览」，那就是即将发出的内容&#10;&#10;说明：{tick} 与 {n} 同值；二进制的 {sum} 只覆盖&#10;占位符产生的字节，与结构表校验和行的范围一致。&#10;&#10;已连接串口时模拟自动让位。">?</span>
+              </div>
+              <label class="term-field term-toggle" title="本地生成协议数据走同一 RX 通道，无需连接设备即可验证解析与图表">
+                <input id="simulation-enabled" type="checkbox">
+                <span>启用</span>
+              </label>
+              <!-- Frame count and the yield state, both readable at a glance.
+                   A transient toast is not enough: the question "is this a
+                   device or the simulator" has to be answerable while
+                   watching the log, not only when it was switched. -->
+              <span id="simulation-status" class="simulation-status" role="status"></span>
+            </div>
+            <button id="simulator-panel-toggle" class="parser-panel-toggle" type="button" aria-expanded="true" aria-controls="simulator-panel-body">
+              <span class="parser-panel-toggle-text">收起</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M6 9l6 6 6-6"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div id="simulator-panel-body" class="simulator-body">
+            <label class="term-field" title="选择模拟的协议脚本">
+              <span>脚本</span>
+              <select id="simulation-script"></select>
+            </label>
+            <!-- Pacing and payload. The interval and burst shape what the
+                 stream looks like on the wire; the templates are what makes
+                 the simulator useful for testing a real rule rather than the
+                 built-in one.
+
+                 Each script seeds its own default into the template box, so a
+                 newcomer sees a working example instead of a placeholder, and
+                 only the template that applies to the chosen script is shown —
+                 the other one used to sit there disabled, which is a dead end
+                 that explains nothing. -->
+            <div class="simulation-config is-open">
+              <label class="term-field" title="两次发送之间的间隔">
+                <span>间隔</span>
+                <select id="simulation-interval"></select>
+              </label>
+              <label class="term-field" title="每个间隔发送的帧数，用于模拟一次应答多帧的设备">
+                <span>每次帧数</span>
+                <select id="simulation-burst"></select>
+              </label>
+
+              <div class="simulation-template-field" data-sim-template="text">
+                <div class="simulation-field-head">
+                  <label for="simulation-template">载荷模板</label>
+                  <button id="simulation-template-reset" class="simulation-reset-btn" type="button" title="恢复该脚本的默认模板">恢复默认</button>
+                </div>
+                <input id="simulation-template" type="text" maxlength="200" spellcheck="false" autocomplete="off">
+                <!-- One text node per label, so each word is its own
+                     translatable string. A sentence of mixed markup collapses
+                     into fragments like "温度 ·" that no dictionary holds. -->
+                <div class="simulation-legend">
+                  <span class="simulation-legend-lead">占位符</span>
+                  <span class="simulation-legend-item"><code>{temp}</code> 温度</span>
+                  <span class="simulation-legend-item"><code>{hum}</code> 湿度</span>
+                  <span class="simulation-legend-item"><code>{n}</code> 帧号</span>
+                  <span class="simulation-legend-item"><code>{ts}</code> 总帧数</span>
+                </div>
+              </div>
+
+              <div class="simulation-template-field" data-sim-template="binary">
+                <div class="simulation-field-head">
+                  <label for="simulation-frame-template">帧模板</label>
+                  <button id="simulation-frame-template-reset" class="simulation-reset-btn" type="button" title="恢复该脚本的默认模板">恢复默认</button>
+                </div>
+                <input id="simulation-frame-template" type="text" maxlength="160" spellcheck="false" autocomplete="off">
+                <div class="simulation-legend">
+                  <span class="simulation-legend-lead">十六进制字节与占位符混写</span>
+                  <span class="simulation-legend-item"><code>{t}</code> 温度×10</span>
+                  <span class="simulation-legend-item"><code>{h}</code> 湿度</span>
+                  <span class="simulation-legend-item"><code>{n}</code> 帧号</span>
+                  <span class="simulation-legend-item"><code>{sum}</code> 占位符字节的校验和</span>
+                </div>
+              </div>
+
+              <div id="simulation-preview" class="simulation-frame-preview" aria-live="off"></div>
+            </div>
+          </div>
+        </section>
+
         <section class="panel parser-panel">
           <div class="panel-head">
             <div>
@@ -342,60 +438,6 @@
             </div>
           </section>
           </div>
-
-          <!-- The simulator belongs to the parse view, not the rail.
-
-               It is a data SOURCE for the parser, so it belongs with the thing
-               it feeds: the settings say how to decode, the simulator supplies
-               something to decode, the results show what came out. Placed
-               between settings and results, the panel reads top to bottom as
-               that pipeline. It was in the rail beside the connection for one
-               commit, which split "generate bytes" and "decode bytes" across
-               two screens. -->
-          <section class="simulator-panel">
-            <div class="simulator-head">
-              <label class="term-field term-toggle" title="本地生成协议数据走同一 RX 通道，无需连接设备即可验证解析与图表">
-                <input id="simulation-enabled" type="checkbox">
-                <span>模拟数据源</span>
-              </label>
-              <!-- Frame count and the yield state, both readable at a glance.
-                   A transient toast is not enough: the question "is this a
-                   device or the simulator" has to be answerable while
-                   watching the log, not only when it was switched. -->
-              <span id="simulation-status" class="simulation-status" role="status"></span>
-            </div>
-
-            <div class="simulator-body">
-              <label class="term-field" title="选择模拟的协议脚本">
-                <span>脚本</span>
-                <select id="simulation-script"></select>
-              </label>
-              <!-- Pacing and payload. The interval and burst shape what the
-                   stream looks like on the wire; the templates are what makes
-                   the simulator useful for testing a real rule rather than the
-                   built-in one. No disclosure: a source whose format cannot be
-                   found is not configurable. -->
-              <div class="simulation-config is-open">
-                <label class="term-field" title="两次发送之间的间隔">
-                  <span>间隔</span>
-                  <select id="simulation-interval"></select>
-                </label>
-                <label class="term-field" title="每个间隔发送的帧数，用于模拟一次应答多帧的设备">
-                  <span>每次帧数</span>
-                  <select id="simulation-burst"></select>
-                </label>
-                <label class="term-field simulation-template-field" title="自定义文本载荷。可用占位符：{n} 计数、{temp} 温度、{hum} 湿度、{tick} 序号、{ts} 总帧数。仅对文本脚本生效。">
-                  <span>载荷模板</span>
-                  <input id="simulation-template" type="text" maxlength="200" placeholder="使用脚本默认" spellcheck="false" autocomplete="off">
-                </label>
-                <label class="term-field simulation-template-field" title="自定义二进制帧格式。十六进制字节与占位符混写：{t} 温度×10、{h} 湿度、{n} 帧序号、{sum} 前面占位符字节的 SUM8 校验和（与结构表一致，不含帧头帧尾）。">
-                  <span>帧模板</span>
-                  <input id="simulation-frame-template" type="text" maxlength="160" placeholder="A5 {t} {h} {sum} 5A" spellcheck="false" autocomplete="off">
-                </label>
-                <span id="simulation-frame-preview" class="simulation-frame-preview" aria-live="off"></span>
-              </div>
-            </div>
-          </section>
 
           <section class="parser-results-card">
             <div class="parser-results-head">

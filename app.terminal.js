@@ -415,10 +415,28 @@
     escape: '\x1b'
   };
 
-  /* Button grouping for the key bar. Order is reading order: 提交 first
-     because Enter is the only key that submits a line and burying it in a group
-     would be wrong, and 控制字节 last so the interrupt keys are not hit by
-     muscle memory while reaching for editing keys. */
+  /* Button grouping for the key bar.
+
+     Grouped by what the key DOES rather than by what it is called, which the
+     previous five groups did not:
+
+       - 历史 ↑↓ sat in "nav" while ^P/^N — the same function — sat in
+         "history" on the other row, with the whole edit group between them;
+       - ^T 转置字符 sat in "edit" while ^X 切换转置 sat in "control";
+       - ^A/^E/^B/^F are movement but were filed under "edit" between Bksp and
+         ^K, because the Emacs letter made them look like editing keys;
+       - "control" carried ^V, ^X, Tab and Esc, none of which interrupt
+         anything, while that group's amber styling exists precisely to mark the
+         bytes that do. Four of its eight keys were false alarms.
+
+     Order is reading order: submit first, because Enter is the only key that
+     sends the line; then recall, movement, editing; then the screen/function
+     keys; and the interrupts last, so muscle memory reaching for an editing
+     key cannot land on ^C. Within a group the order is one the user can
+     predict: history is arrows then their Emacs equivalents then search;
+     movement goes character → word → line → Emacs → Alt; editing goes by
+     deletion granularity, smallest first, with ^X beside ^T because both are
+     transpose. */
   const TERM_KEY_GROUPS = [
     {
       id: 'submit',
@@ -428,26 +446,32 @@
       ]
     },
     {
-      id: 'nav',
+      id: 'history',
       buttons: [
         { key: 'up', label: '↑', tip: '↑ 上一个历史' },
         { key: 'down', label: '↓', tip: '↓ 下一个历史' },
+        { key: 'ctrl-p', label: '^P', tip: '^P 上一条历史' },
+        { key: 'ctrl-n', label: '^N', tip: '^N 下一条历史' },
+        { key: 'ctrl-r', label: '^R', tip: '^R 反向增量搜索（fzf 常用）' },
+        { key: 'ctrl-o', label: '^O', tip: '^O 轮换历史' },
+        { key: 'ctrl-l', label: '^L', tip: '^L 清屏' }
+      ]
+    },
+    {
+      id: 'move',
+      buttons: [
         { key: 'left', label: '←', tip: '← 光标左移' },
         { key: 'right', label: '→', tip: '→ 光标右移' },
-        { key: 'home', label: 'Home', tip: 'Home 行首' },
-        { key: 'end', label: 'End', tip: 'End 行尾' },
-        { key: 'pageup', label: 'PgUp', tip: 'PgUp 上翻一屏' },
-        { key: 'pagedown', label: 'PgDn', tip: 'PgDn 下翻一屏' },
-        { key: 'insert', label: 'Ins', tip: 'Insert 插入模式' },
-        { key: 'shift-tab', label: '⇧Tab', tip: 'Shift-Tab 反向补全（越过补全菜单）' },
         { key: 'ctrl-left', label: '^←', tip: '^← 按词左移' },
         { key: 'ctrl-right', label: '^→', tip: '^→ 按词右移' },
+        { key: 'home', label: 'Home', tip: 'Home 行首' },
+        { key: 'end', label: 'End', tip: 'End 行尾' },
+        { key: 'ctrl-b', label: '^B', tip: '^B 左移一字符' },
+        { key: 'ctrl-f', label: '^F', tip: '^F 右移一字符' },
+        { key: 'ctrl-a', label: '^A', tip: '^A 行首' },
+        { key: 'ctrl-e', label: '^E', tip: '^E 行尾' },
         { key: 'alt-b', label: 'Alt-B', tip: 'Alt-B 按词左移（经典绑定）' },
-        { key: 'alt-f', label: 'Alt-F', tip: 'Alt-F 按词右移（经典绑定）' },
-        { key: 'f1', label: 'F1', tip: 'F1（部分固件菜单绑定）' },
-        { key: 'f2', label: 'F2', tip: 'F2' },
-        { key: 'f3', label: 'F3', tip: 'F3' },
-        { key: 'f4', label: 'F4', tip: 'F4' }
+        { key: 'alt-f', label: 'Alt-F', tip: 'Alt-F 按词右移（经典绑定）' }
       ]
     },
     {
@@ -455,25 +479,28 @@
       buttons: [
         { key: 'backspace', label: 'Bksp', tip: 'Backspace 退格' },
         { key: 'delete', label: 'Del', tip: 'Delete 删除' },
-        { key: 'ctrl-a', label: '^A', tip: '^A 行首' },
-        { key: 'ctrl-e', label: '^E', tip: '^E 行尾' },
-        { key: 'ctrl-b', label: '^B', tip: '^B 左移一字符' },
-        { key: 'ctrl-f', label: '^F', tip: '^F 右移一字符' },
         { key: 'ctrl-k', label: '^K', tip: '^K 删到行尾' },
         { key: 'ctrl-u', label: '^U', tip: '^U 删到行首' },
         { key: 'ctrl-w', label: '^W', tip: '^W 删前一个词' },
         { key: 'ctrl-t', label: '^T', tip: '^T 转置字符' },
-        { key: 'ctrl-y', label: '^Y', tip: '^Y 召回' }
+        { key: 'ctrl-x', label: '^X', tip: '^X 切换转置' },
+        { key: 'ctrl-y', label: '^Y', tip: '^Y 召回' },
+        { key: 'ctrl-v', label: '^V', tip: '^V 引号插入' }
       ]
     },
     {
-      id: 'history',
+      id: 'page',
       buttons: [
-        { key: 'ctrl-r', label: '^R', tip: '^R 反向增量搜索（fzf 常用）' },
-        { key: 'ctrl-p', label: '^P', tip: '^P 上一条历史' },
-        { key: 'ctrl-n', label: '^N', tip: '^N 下一条历史' },
-        { key: 'ctrl-o', label: '^O', tip: '^O 轮换历史' },
-        { key: 'ctrl-l', label: '^L', tip: '^L 清屏' }
+        { key: 'pageup', label: 'PgUp', tip: 'PgUp 上翻一屏' },
+        { key: 'pagedown', label: 'PgDn', tip: 'PgDn 下翻一屏' },
+        { key: 'insert', label: 'Ins', tip: 'Insert 插入模式' },
+        { key: 'shift-tab', label: '⇧Tab', tip: 'Shift-Tab 反向补全（越过补全菜单）' },
+        { key: 'tab', label: 'Tab', tip: 'Tab 制表符' },
+        { key: 'escape', label: 'Esc', tip: 'Esc ESC' },
+        { key: 'f1', label: 'F1', tip: 'F1（部分固件菜单绑定）' },
+        { key: 'f2', label: 'F2', tip: 'F2' },
+        { key: 'f3', label: 'F3', tip: 'F3' },
+        { key: 'f4', label: 'F4', tip: 'F4' }
       ]
     },
     {
@@ -482,11 +509,7 @@
         { key: 'ctrl-c', label: '^C', tip: '^C 中断前台进程（0x03）' },
         { key: 'ctrl-d', label: '^D', tip: '^D EOF / 注销（0x04）' },
         { key: 'ctrl-z', label: '^Z', tip: '^Z 挂起到后台（0x1A）' },
-        { key: 'ctrl-g', label: '^G', tip: '^G 中止' },
-        { key: 'ctrl-v', label: '^V', tip: '^V 引号插入' },
-        { key: 'ctrl-x', label: '^X', tip: '^X 切换转置' },
-        { key: 'tab', label: 'Tab', tip: 'Tab 制表符' },
-        { key: 'escape', label: 'Esc', tip: 'Esc ESC' }
+        { key: 'ctrl-g', label: '^G', tip: '^G 中止' }
       ]
     }
   ];
@@ -496,14 +519,19 @@
 
      44 keys in one row wrapped wherever the window happened to end, so the bar
      changed height as the window resized and shoved the terminal around. Two
-     fixed rows keep the bar's height constant.
+     fixed rows keep the bar's height roughly constant — and "roughly" only
+     holds if the two rows carry comparable width, because each row still wraps
+     on its own.
 
-     The split is submission/navigation on top and editing/history/control
-     below, which is also the reading order: Enter first, the interrupt keys
-     last. */
+     Hence this split rather than the obvious "hot keys on top": by measured
+     button width the chosen pair is ~790px / ~815px, while putting submit +
+     edit + history on top leaves the bottom row at ~960px against ~650px, i.e.
+     a row that wraps while the other does not. The cost is that Bksp and Del
+     sit at the head of the second row instead of beside Enter; they are the
+     first thing on it, which is where the eye goes next anyway. */
   const TERM_KEY_ROWS = [
-    ['submit', 'nav'],
-    ['edit', 'history', 'control']
+    ['submit', 'history', 'move'],
+    ['edit', 'page', 'control']
   ];
 
   /* Buttons must work without the terminal holding focus, so this dispatches

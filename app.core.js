@@ -129,6 +129,11 @@
          would concatenate into one ever-growing display event instead of one
          line per reading. Real devices terminate their frames too. */
       textRule: '/name0=/float0,/name1=/int0',
+      // Seeds the payload box. It expands to exactly what build() emits, so
+      // seeding it changes no bytes — it only makes the format visible and
+      // editable. That is the whole point: a template the user cannot see is a
+      // template the user cannot use.
+      templateDefault: 'temp={temp},humid={hum};',
       build: (tick) => {
         const temp = 21 + Math.sin(tick / 9) * 3.5;
         const hum = 48 + Math.cos(tick / 7) * 6;
@@ -139,6 +144,9 @@
       label: '文本：JSON 负载',
       // With an empty rule box the parser tries JSON, so this script
       // demonstrates that fallback rather than a text rule.
+      // Same idea as above; {temp} carries one decimal where build() writes
+      // two, which JSON parsing does not care about.
+      templateDefault: '{"device":"sim-01","uptime":{n},"temp":{temp}}',
       build: (tick) => {
         const temp = 21 + Math.sin(tick / 9) * 3.5;
         return encodeText(
@@ -211,6 +219,27 @@
   const SIMULATION_TEMPLATE_DEFAULT = '';
   const SIMULATION_TEMPLATE_MAX = 200;
   const SIMULATION_PLACEHOLDERS = ['{n}', '{temp}', '{hum}', '{tick}', '{ts}'];
+
+  /* What the template boxes show when the user has not typed in them.
+
+     SIMULATION_TEMPLATE_DEFAULT stays '' because that is the persisted
+     "never touched" value and applySimulationTemplate() reads it as "send the
+     script's own output". The UI seeds `templateDefault` instead, so neither
+     box is ever empty: a format you cannot see is a format you cannot edit,
+     which is exactly why the payload template went unused. Each default
+     expands to what the script emits anyway, so seeding it changes no bytes.
+
+     The frame default is the same idea for the binary script, which has no
+     text shape to template and is configured through the frame template. */
+  function simulationTemplateDefault(scriptId) {
+    return String(SIMULATION_SCRIPTS[scriptId]?.templateDefault || '');
+  }
+
+  function simulationFrameTemplateDefault(scriptId) {
+    const script = SIMULATION_SCRIPTS[scriptId];
+    if (!script?.schema) return SIMULATION_FRAME_TEMPLATE_DEFAULT;
+    return String(script.frameTemplate || SIMULATION_FRAME_TEMPLATE_DEFAULT);
+  }
 
   /* Keyboard shortcuts.
 
@@ -404,6 +433,8 @@
     parserModeSwitch: document.querySelector('.parser-mode-switch'),
     parserPanelToggle: document.getElementById('parser-panel-toggle'),
     parserPanelBody: document.getElementById('parser-panel-body'),
+    simulatorPanelToggle: document.getElementById('simulator-panel-toggle'),
+    simulatorPanelBody: document.getElementById('simulator-panel-body'),
     textRuleOverlay: document.getElementById('text-rule-overlay'),
     textParseRule: document.getElementById('text-parse-rule'),
     addBinaryRowBtn: document.getElementById('add-binary-row-btn'),
@@ -417,8 +448,10 @@
     simulationInterval: document.getElementById('simulation-interval'),
     simulationBurst: document.getElementById('simulation-burst'),
     simulationTemplate: document.getElementById('simulation-template'),
+    simulationTemplateReset: document.getElementById('simulation-template-reset'),
     simulationFrameTemplate: document.getElementById('simulation-frame-template'),
-    simulationFramePreview: document.getElementById('simulation-frame-preview'),
+    simulationFrameTemplateReset: document.getElementById('simulation-frame-template-reset'),
+    simulationPreview: document.getElementById('simulation-preview'),
     simulationMonitorChip: document.getElementById('simulation-monitor-chip'),
     addTimeChartBtn: document.getElementById('add-time-chart-btn'),
     addFftChartBtn: document.getElementById('add-fft-chart-btn'),
@@ -581,7 +614,14 @@
         // scripts use it; a binary frame has no meaningful text template.
         template: SIMULATION_TEMPLATE_DEFAULT,
         // Binary frame layout, in the SIMULATION_FRAME_PLACEHOLDERS notation.
-        frameTemplate: SIMULATION_FRAME_TEMPLATE_DEFAULT
+        frameTemplate: SIMULATION_FRAME_TEMPLATE_DEFAULT,
+        /* Whether the user has typed in each box. While false, switching
+           scripts re-seeds the box with the new script's default; once the user
+           has written their own template, it survives script switches — a
+           template they wrote is not something to overwrite because they
+           looked at another script. Cleared by 恢复默认. */
+        templateDirty: false,
+        frameTemplateDirty: false
       },
       rxDisplayMode: 'text',
       textEncoding: 'utf-8',
@@ -724,6 +764,11 @@
       // it folded away is the same "where is the thing I came for" problem the
       // simulator disclosure had. Still collapsible, and still remembered.
       parserPanelOpen: true,
+      // Same reasoning as the parser panel: the simulator is one of the three
+      // things the parse view is for, and it is the one that cannot be found
+      // when it starts folded — the whole point of this part is that the user
+      // can see what is about to be sent.
+      simulatorPanelOpen: true,
       // Terminal key bar starts open; the collapse is a per-user choice about
       // panel height, not a default the app should make for them.
       termKeyBarOpen: true,
@@ -2623,6 +2668,7 @@
   function applyLayoutModePanels() {
     applySimulationMonitorChip();
     applyParserPanelOpen();
+    applySimulatorPanelOpen();
   }
 
   function applyLayout(animate = true) {
@@ -2674,6 +2720,25 @@
   function toggleParserPanel() {
     state.ui.parserPanelOpen = !state.ui.parserPanelOpen;
     applyParserPanelOpen();
+  }
+
+  /* Simulator collapse.
+
+     Same control as the parser panel, for the same reason: it is one of the
+     three parts of the parse view and it costs vertical space. Open by
+     default — this part exists to be looked at (what is about to be sent, in
+     what shape), and a part that starts closed is a part nobody finds. */
+  function applySimulatorPanelOpen() {
+    const open = Boolean(state.ui.simulatorPanelOpen);
+    refs.simulatorPanelBody?.classList.toggle('hidden', !open);
+    refs.simulatorPanelToggle?.setAttribute('aria-expanded', String(open));
+    const label = refs.simulatorPanelToggle?.querySelector('.parser-panel-toggle-text');
+    if (label) label.textContent = open ? t('收起') : t('展开');
+  }
+
+  function toggleSimulatorPanel() {
+    state.ui.simulatorPanelOpen = !state.ui.simulatorPanelOpen;
+    applySimulatorPanelOpen();
   }
 
   function toggleMenu(menuEl) {
