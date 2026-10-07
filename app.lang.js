@@ -90,11 +90,11 @@
     '偶校验': 'Even',
     '奇校验': 'Odd',
     '无': 'None',
-    'RTS/CTS 流控': 'RTS/CTS flow control',
-    '自动控制与硬件流控': 'Auto control and hardware flow control',
+    'RTS/CTS 流控': 'RTS/CTS flow',
+    '自动控制与硬件流控': 'Auto & flow control',
     '手动控制 RTS': 'Manual RTS control',
     'RTS/CTS 流控生效时，RTS 由系统自动接管。': 'With RTS/CTS flow control enabled, the system takes over RTS.',
-    '失焦自动断连': 'Release on blur',
+    '失焦自动断连': 'Blur release',
     '自动重连': 'Auto reconnect',
     '字符编码': 'Text encoding',
     '显示时间': 'Show timestamps',
@@ -167,6 +167,7 @@
     '就绪，等待连接': 'Ready, waiting to connect',
     '开': 'On',
     '关': 'Off',
+    '未知': 'Unknown',
 
     /* Monitor view */
     '串口监视': 'Serial monitor',

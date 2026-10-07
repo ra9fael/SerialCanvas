@@ -483,10 +483,18 @@
     updateSignalControlsUI();
   }
 
+  /* Three states, not two.
+
+     null means getSignals() has not reported this pin yet — the port is closed,
+     or the read failed. That must not render as "off", because a driver that
+     does not report modem status returns all-false rather than throwing, and
+     that is indistinguishable from a genuine "all low". Making the unknown
+     state explicit is the difference between "the link is broken" and "I do
+     not know yet". */
   function signalValueLabel(value) {
     if (value === true) return t('开');
     if (value === false) return t('关');
-    return '-';
+    return t('未知');
   }
 
   function isAutoHardwareFlowControlActive() {
@@ -549,6 +557,7 @@
     inputDefs.forEach(({ el, valueEl, value }) => {
       valueEl.textContent = signalValueLabel(value);
       el.classList.toggle('is-on', value === true);
+      el.classList.toggle('is-unknown', value === null || value === undefined);
     });
   }
 

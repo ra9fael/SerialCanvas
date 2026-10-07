@@ -146,16 +146,6 @@
           <div class="panel-head">
             <div class="config-head-group">
               <div class="panel-title">设备连接管理</div>
-              <div class="device-meta-stack">
-                <div class="device-meta-line">
-                  <strong>VID</strong>
-                  <span id="device-vid">-</span>
-                </div>
-                <div class="device-meta-line">
-                  <strong>PID</strong>
-                  <span id="device-pid">-</span>
-                </div>
-              </div>
             </div>
             <div class="connect-control-box">
               <div class="button-row">
@@ -169,6 +159,14 @@
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- Device metadata belongs with the connection state, not the panel
+               title. It used to float top-right, baseline-misaligned with the
+               two-line heading. -->
+          <div class="device-meta-strip">
+            <span class="device-meta-item"><strong>VID</strong><span id="device-vid">-</span></span>
+            <span class="device-meta-item"><strong>PID</strong><span id="device-pid">-</span></span>
           </div>
 
           <div class="config-grid">

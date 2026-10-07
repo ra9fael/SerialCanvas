@@ -71,6 +71,31 @@
   --grid-gap: 10px;
   --header-height: 52px;
   --compact-float-top: 92px;
+
+  /* Control heights.
+
+     Measured across the connection rail and the toolbars before these existed:
+     30 / 31 / 32 / 34 / 36 / 40 / 44.2 / 59.3px, all literals, which is why the
+     rail read as assembled parts rather than one panel. Two values now cover
+     it:
+
+       --control-h     selects, inputs, inline buttons, toggle rows, chips
+       --control-h-lg  the Connect button only
+
+     The Connect button keeps a different height deliberately - it is the sole
+     primary action in the panel, and flattening it to the same height as a baud
+     preset button would remove the hierarchy. --control-h-sm exists for the
+     monitor toolbar's term-field chips, whose density was measured separately
+     at 1280px and is left alone. */
+  --control-h: 32px;
+  --control-h-lg: 44px;
+  --control-h-sm: 28px;
+
+  /* Focus ring. The old indigo literal (rgba(86,114,205,...)) appeared in 69
+     places; this covers the control focus states so they follow --accent
+     instead of the colour the accent replaced. */
+  --focus-ring: 0 0 0 4px var(--accent-soft);
+  --focus-ring-border: var(--accent);
   /* Left rail width. Fluid so the serial monitor keeps the extra pixels on an
      ultrawide window instead of the config column claiming a fixed 286px.
      min 248px stays readable for the baud/preset grids; max 320px stops it from
@@ -747,6 +772,16 @@ select::-ms-expand {
   display: block;
   width: 100%;
   min-width: 0;
+  /* The wrapper was content-sized, so the trigger's 32px min-height plus its
+     own 1px borders produced a 32.5px wrapper and a 31px measured trigger.
+     Sizing the wrapper to the token makes the whole widget exactly one row. */
+  height: var(--control-h);
+}
+
+/* The toolbar chips keep their own density (measured at 1280px), so the token
+   must not apply to them. */
+.custom-select.compact {
+  height: auto;
 }
 
 .custom-select-native {
@@ -761,7 +796,10 @@ select::-ms-expand {
 .custom-select-trigger {
   width: 100%;
   min-width: 0;
-  min-height: 34px;
+  /* height, not min-height: the wrapper is exactly --control-h and the trigger
+     is its only child, so leaving it to content let it settle at 31px. */
+  height: var(--control-h);
+  flex: 0 0 auto;
   padding: 0 9px 0 10px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
@@ -779,7 +817,13 @@ select::-ms-expand {
 .custom-select-label {
   flex: 1 1 auto;
   min-width: 0;
-  padding: 7px 0;
+  /* Vertical centring instead of 7px padding: padding made the row height
+     content-driven (13px type x 1.5 line-height + 14px = 30.8px, rounding to
+     31), so the trigger did not match the 32px token. */
+  display: flex;
+  align-items: center;
+  min-height: 0;
+  padding: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -866,7 +910,8 @@ select::-ms-expand {
 }
 
 .custom-select.compact .custom-select-trigger {
-  min-height: 32px;
+  height: var(--control-h);
+  min-height: var(--control-h);
   padding: 0 9px;
 }
 
@@ -2153,9 +2198,12 @@ body.config-collapsed:not(.compact-single):not(.layout-expanded) .left-column {
   font-size: 12px;
 }
 
+/* This used to override .toggle-row with a 40px literal, which is why the rail
+   had two different row heights for the same kind of control. Only the radius
+   differs here (the rail's rows are tighter than the toolbars'). */
 .config-panel .toggle-row {
-  min-height: 40px;
-  padding: 8px 10px;
+  min-height: var(--control-h);
+  padding: 6px 10px;
   border-radius: var(--radius-sm);
 }
 
@@ -2206,12 +2254,14 @@ body.theme-dark .connect-control-box {
   min-width: 0;
 }
 
+/* The one control that keeps a different height on purpose: it is the only
+   primary action in the rail. */
 .connect-primary-stack .primary-btn {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
-  padding: 9px 10px;
+  min-height: var(--control-h-lg);
+  padding: 0 10px;
   font-size: 12px;
-  box-shadow: 0 12px 24px rgba(86, 114, 205, 0.2);
 }
 
 #connect-btn {
@@ -2306,6 +2356,39 @@ html[lang="en"] .reconnect-chip .reconnect-label-text {
 
 .reconnect-chip input:checked ~ .reconnect-label-text {
   color: var(--text);
+}
+
+/* One meta line under the Connect button. VID/PID used to sit in the panel
+   head, baseline-misaligned with the two-line title, which read as a stray
+   fragment rather than as connection metadata. */
+.device-meta-strip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 20px;
+  padding: 0 2px;
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.device-meta-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+}
+
+.device-meta-item strong {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text-soft);
+}
+
+.device-meta-item span {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-soft);
 }
 
 .device-meta-stack {
@@ -2425,15 +2508,18 @@ html[lang="en"] .reconnect-chip .reconnect-label-text {
   box-shadow: 0 0 0 4px rgba(86, 114, 205, 0.12);
 }
 
+/* Explicit height rather than padding arithmetic, so the combo matches the
+   32px token like every other control. */
 .baud-rate-combo > input,
 .baud-rate-combo > button {
   width: 100%;
   min-width: 0;
+  height: var(--control-h);
   border: none;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  padding: 9px 10px;
+  padding: 0 10px;
 }
 
 .baud-rate-combo > input {
@@ -2500,7 +2586,12 @@ html[lang="en"] .reconnect-chip .reconnect-label-text {
 }
 
 .signal-output-row.primary {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* One column, not two. At 274px rail width a two-column split leaves ~80px
+     beside the checkbox, and the uppercase kicker needs ~100px even for
+     "BLUR RELEASE" — so English labels wrapped whatever their length. These
+     two are also conceptually distinct (blur behaviour vs flow control), not
+     a matched pair, so stacking them costs nothing semantically. */
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .signal-output-row.secondary {
@@ -2517,13 +2608,18 @@ html[lang="en"] .reconnect-chip .reconnect-label-text {
   cursor: not-allowed;
 }
 
+/* Solid border, not dashed: a dashed frame conventionally means "fillable",
+   and these are read-only device inputs. The Web Serial API cannot set an
+   input pin, so there is nothing to click here — they are one visual family
+   with .signal-chip and .toggle-row because they are the same kind of thing,
+   a labelled control row. */
 .signal-readout {
-  min-height: 36px;
+  min-height: var(--control-h);
   width: 100%;
   padding: 0 10px;
   border-radius: var(--radius-sm);
-  border: 1px dashed var(--border);
-  background: rgba(255,255,255,0.12);
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2533,9 +2629,15 @@ html[lang="en"] .reconnect-chip .reconnect-label-text {
   color: var(--text-soft);
 }
 
-body.theme-dark .signal-readout {
-  background: rgba(12, 19, 24, 0.26);
+/* Never read: getSignals() only runs after a successful connect, so the
+   initial null must not look like a reading of "off". */
+.signal-readout.is-unknown span {
+  color: var(--text-faint);
+  font-weight: 600;
 }
+/* No dark override: --bg-panel already resolves per theme, and the previous
+   rgba(12,19,24,.26) here was one of the hard-coded fills the token layer was
+   meant to remove. */
 
 .signal-readout strong {
   font-size: 10px;
@@ -2578,23 +2680,26 @@ body.theme-dark .signal-readout {
   flex-wrap: wrap;
 }
 
+/* Height comes from the token, not from padding arithmetic, so a two-line
+   label and a one-line label occupy the same row. English labels such as
+   "RTS/CTS FLOW CONTROL" cannot fit beside a checkbox in a 274px rail at the
+   uppercase kicker size — the layout must not depend on the text fitting. */
 .toggle-row {
   display: flex;
   gap: 10px;
   align-items: center;
   justify-content: space-between;
   flex-wrap: nowrap;
+  min-height: var(--control-h);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 10px 12px;
-  background: rgba(255,255,255,0.18);
+  padding: 6px 12px;
+  background: var(--bg-panel);
   cursor: pointer;
   min-width: 0;
 }
-
-body.theme-dark .toggle-row {
-  background: rgba(12, 19, 24, 0.4);
-}
+/* No dark override needed: --bg-panel resolves per theme. The removed
+   rgba(12,19,24,.4) was another hard-coded fill defeating the token layer. */
 
 .toggle-row > div {
   min-width: 0;
@@ -2622,8 +2727,11 @@ html[lang="en"] .toggle-row .mini-label {
 .rule-table input[type="checkbox"],
 .queue-table input[type="checkbox"],
 .chart-channel-list input[type="checkbox"] {
-  width: 15px;
-  height: 15px;
+  /* 16px, not 15px: at 15 the box disappeared against a 32px row instead of
+     reading as a control. accent-color follows --accent, so the checked state
+     is a filled vermilion box in both themes. */
+  width: 16px;
+  height: 16px;
   accent-color: var(--accent);
   margin: 0;
   flex: 0 0 auto;
@@ -4675,6 +4783,8 @@ body.theme-dark .module-switch {
 }
 
 .custom-select.compact .custom-select-trigger {
+  /* Toolbar chips keep the density measured at 1280px in c9720e5. */
+  height: 26px;
   min-height: 26px;
   width: 100%;
   border-radius: var(--radius-xs);
