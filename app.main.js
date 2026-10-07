@@ -355,7 +355,6 @@
       const label = t('下一帧预览');
       refs.simulationFramePreview.textContent = `${label}: ${preview.hex} (${preview.bytes}B)`;
     }
-    if (!refs.simulationStatus) return;
     const yielded = sim.enabled && state.serial.connected;
     const parts = [];
     if (sim.totalFrames > 0) {
@@ -364,8 +363,45 @@
     if (yielded) {
       parts.push(t('串口已连接，模拟让位'));
     }
-    refs.simulationStatus.textContent = parts.join(' · ');
-    refs.simulationStatus.classList.toggle('is-yielded', yielded);
+    const statusText = parts.join(' · ');
+    if (refs.simulationStatus) {
+      refs.simulationStatus.textContent = statusText;
+      refs.simulationStatus.classList.toggle('is-yielded', yielded);
+    }
+    applySimulationMonitorChip();
+  }
+
+  /* Read-only mirror of the simulator state for the monitor view.
+
+     The switch lives in the parse view, but the frames it produces land in the
+     monitor's log — so the question "is this stream a device or the simulator"
+     has to be answerable where the stream is watched. The chip answers it and
+     nothing more: it is not a control, because two switches for one setting is
+     the duplication it exists to prevent. Hidden entirely when the simulator is
+     off, so it costs no attention in the common case. */
+  function applySimulationMonitorChip() {
+    const chip = refs.simulationMonitorChip;
+    if (!chip) return;
+    // The parse view has the real switch; a chip beside it would be noise.
+    if (state.layoutExpanded) {
+      chip.hidden = true;
+      chip.textContent = '';
+      chip.classList.remove('is-active', 'is-yielded');
+      return;
+    }
+    const sim = state.settings.simulation;
+    const active = Boolean(sim.enabled);
+    chip.hidden = !active;
+    chip.classList.toggle('is-active', active);
+    const yielded = active && state.serial.connected;
+    chip.classList.toggle('is-yielded', yielded);
+    if (!active) {
+      chip.textContent = '';
+      return;
+    }
+    chip.textContent = yielded
+      ? t('模拟已让位 · {{count}} 帧', { count: sim.totalFrames })
+      : t('模拟中 · {{count}} 帧', { count: sim.totalFrames });
   }
 
   function syncBufferUi() {

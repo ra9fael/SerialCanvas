@@ -2069,36 +2069,29 @@ body:not(.compact-single) .left-column {
   justify-self: start;
 }
 
-/* Monitor mode shows the parse RESULT only. The configuration — text rule,
-   hex structure table — configures the charts, and the charts are in the graph
-   view, so it is hidden here along with the title that introduces it. Doing it
-   with a body class keeps one panel element for both modes instead of two
-   code paths that can disagree about what is visible. */
-body.parser-settings-inline .parser-panel > .panel-head,
-body.parser-settings-inline #parser-panel-body {
-  display: none;
+/* The two views own disjoint columns.
+
+   Everything derived from the byte stream — the decode rules, the simulator
+   that supplies one when no device is attached, the decoded values, the charts
+   — is parse-view content, and the monitor panel is monitor-view content. A
+   body class rather than a conditional at each site, so the panel arrangement,
+   the collapse state and the monitor chip all read the same single fact. */
+body:not(.layout-expanded) .parser-panel {
+  display: none !important;
 }
 
-body.parser-settings-inline .parser-results-card {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
+body.layout-expanded .monitor-panel {
+  display: none !important;
 }
 
-/* Simulator panel (the second data source, beside the connection). */
+/* Simulator: a section inside the parse panel, not a panel of its own, so it
+   has no border or padding of its own and reads as part of the pipeline. */
 .simulator-panel {
   display: grid;
   align-content: start;
   gap: 8px;
-  padding: 8px;
   min-height: 0;
-  overflow: visible;
-}
-
-.simulator-panel .panel-head {
-  display: block;
-  padding: 0;
+  min-width: 0;
 }
 
 .simulator-head {
@@ -2142,10 +2135,15 @@ body.parser-settings-inline .parser-results-card {
   grid-column: 1 / -1;
 }
 
-/* Narrow rail: the rail is fluid (clamp(248px, 19vw, 320px)), so the pacing
-   grid has to collapse on the viewport, not on a container that does not
-   exist here. */
-@media (max-width: 1180px) {
+/* Two columns for the pacing controls, one for the full-width templates.
+
+   The breakpoint is on the viewport because there is no query container in this
+   stylesheet. It is lower than it looks: the parse panel sits in the right
+   column, which is viewport-width minus the rail, so a rail-shaped threshold
+   would leave the grid two-up in a column too narrow to read. The single-column
+   fallback also covers the compact single-viewport layout, where the panel is
+   full width but the window is narrow. */
+@media (max-width: 900px) {
   .simulator-panel .simulation-config {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2254,12 +2252,10 @@ body.layout-expanded:not(.compact-single) .left-column {
   overscroll-behavior: contain;
 }
 
-/* The rail holds the connection panel alone (see arrangeWorkspacePanels), so
-   it now stretches to the full column height instead of hugging its content and
-   leaving a gap underneath. The panel scrolls internally when it overflows. */
-/* The rail holds the connection panel and the simulator, both of which size to
-   their content, so the column is one auto row and the connection panel keeps
-   its internal scroll for a long signal-config list. */
+/* The rail holds the connection panel alone and the panel sizes to its content,
+   so the column is a single auto row and the rail reads as one panel rather
+   than a half-empty column. The panel scrolls internally when the signal
+   config is long, so the rail never overflows the viewport. */
 body:not(.layout-expanded):not(.compact-single) .expanded-left-top {
   align-content: start;
 }
@@ -2279,22 +2275,6 @@ body.config-collapsed:not(.compact-single):not(.layout-expanded) .left-column {
 }
 
 body:not(.layout-expanded):not(.compact-single) .right-column {
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-/* Monitor mode stacks the monitor above the parser panel.
-
-   flex: 0 0 auto with a max-height, NOT 0 1 auto: a shrinkable parser panel
-   loses to the monitor's flex-grow, so the results card — the thing the panel
-   exists to show — ended up clipped (measured 243px for 324px of content) while
-   the log had room to spare. Sizing the parser to its content up to a share of
-   the column makes the monitor the flexible one, which is the right priority:
-   the results scroll internally once they pass the cap. */
-body:not(.layout-expanded):not(.compact-single) .right-column > .parser-panel {
-  flex: 0 0 auto;
-  max-height: 45%;
-  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -5725,19 +5705,11 @@ body.compact-single .expanded-left-top {
   align-content: start;
 }
 
-/* Compact monitor mode: the parser panel now sits in the right column rather
-   than the rail, so it stays reachable (it holds the simulator) instead of
-   being hidden along with the rail. Bounded so the terminal keeps the majority
-   of a short viewport. */
+/* Compact monitor mode: the charts are parse-view content, so they are hidden
+   here along with the parse panel. The `layout-expanded` rule already covers
+   the parser panel itself in every layout. */
 body.compact-single:not(.layout-expanded) .charts-panel {
   display: none !important;
-}
-
-body.compact-single:not(.layout-expanded) .right-column > .parser-panel {
-  flex: 0 0 auto;
-  max-height: 46%;
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 body.compact-single.layout-expanded .right-column {
@@ -5749,10 +5721,6 @@ body.compact-single.layout-expanded .right-column {
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 2px;
-}
-
-body.layout-expanded .monitor-panel {
-  display: none !important;
 }
 
 body.compact-single.layout-expanded .parser-panel,
@@ -6357,6 +6325,40 @@ body.compact-single.layout-expanded .device-meta-stack {
   border-color: var(--sim-text);
   color: var(--sim-text);
   background: var(--sim-soft);
+}
+
+/* Monitor-view read-only mirror of the simulator state.
+
+   Sits with the Mode/TX/RX meta, not among the controls: the toolbar is
+   flex-wrap: nowrap, so anything added to the button row takes width from its
+   neighbours (in the button row this clipped "补换行" to a bare checkbox).
+   Baseline-aligned to match the meta lines it sits beside. Not a button: no
+   pointer, no focus ring, nothing to click — the switch is in the parse view
+   and a second one here would be the duplication this chip exists to prevent. */
+.simulation-monitor-chip {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  min-height: 20px;
+  padding: 0 7px;
+  border: 1px solid var(--sim-text);
+  border-radius: var(--radius-xs);
+  background: var(--sim-soft);
+  color: var(--sim-text);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: default;
+  user-select: none;
+}
+
+/* Yielded reads differently from running: the simulator is on but a real port
+   is producing the bytes, so the amber "this data is not real" tint would be
+   lying. */
+.simulation-monitor-chip.is-yielded {
+  border-color: var(--border-strong);
+  background: var(--bg-panel);
+  color: var(--text-soft);
 }
 
 /* ============================================================================

@@ -226,6 +226,8 @@
     '实时解析结果': 'Live parse results',
     '模拟数据': 'Simulate',
     '模拟数据源': 'Simulated source',
+    '模拟中 · {{count}} 帧': 'Simulating · {{count}} frames',
+    '模拟已让位 · {{count}} 帧': 'Simulator yielded · {{count}} frames',
     '已产生 {{count}} 帧': '{{count}} frames emitted',
     '串口已连接，模拟让位': 'Serial port connected; simulation yields',
     'SIM': 'SIM',

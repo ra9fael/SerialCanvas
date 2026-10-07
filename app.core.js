@@ -395,7 +395,6 @@
     rightColumn: document.querySelector('.right-column'),
     expandedLeftTop: document.querySelector('.expanded-left-top'),
     configPanel: document.querySelector('.config-panel'),
-    simulatorPanel: document.querySelector('.simulator-panel'),
     parserPanel: document.querySelector('.parser-panel'),
     chartsPanel: document.querySelector('.charts-panel'),
     monitorPanel: document.querySelector('.monitor-panel'),
@@ -420,6 +419,7 @@
     simulationTemplate: document.getElementById('simulation-template'),
     simulationFrameTemplate: document.getElementById('simulation-frame-template'),
     simulationFramePreview: document.getElementById('simulation-frame-preview'),
+    simulationMonitorChip: document.getElementById('simulation-monitor-chip'),
     addTimeChartBtn: document.getElementById('add-time-chart-btn'),
     addFftChartBtn: document.getElementById('add-fft-chart-btn'),
     addBarChartBtn: document.getElementById('add-bar-chart-btn'),
@@ -2575,38 +2575,34 @@
 
   /* Panel placement per layout mode.
 
-     The rail is device connection management plus the simulator, which is the
-     other way data arrives: a real port, or locally generated frames. They sit
-     together because they are the same question — where is this data coming
-     from — and the simulator used to be buried inside the parse-results header,
-     where it read as a parser setting rather than a data source.
+     The rail is device connection management and nothing else.
 
-     The parse configuration — text rule, hex structure table — belongs to the
-     graph view. It configures how the charts are built, and it used to appear
-     in the rail too, i.e. in two places at once depending on the mode. What
-     stays visible in monitor mode is the parse *result*, because that is what
-     you watch the log for; only the settings move.
+     The parse view owns everything derived from the byte stream: how to decode
+     it, a source to decode when no device is attached, the decoded values, and
+     the charts. Those four are one pipeline and they now live together in one
+     column, in that order. The simulator was briefly in the rail beside the
+     connection, which was defensible — it is a data source — but it split
+     "generate bytes" and "decode bytes" across two screens, and the rail was
+     carrying a panel that only matters while parsing.
 
-     So: rail = connection + simulator; right column = live results under the
-     monitor, and settings + results + charts in graph mode. */
+     The monitor view is the byte stream itself: log, terminal, send. The parse
+     panel is not in it at all, rather than present-but-partly-hidden, so there
+     is exactly one place to look for anything parse-related. */
   function arrangeWorkspacePanels() {
     const {
       leftColumn,
       rightColumn,
       expandedLeftTop,
       configPanel,
-      simulatorPanel,
       parserPanel,
       chartsPanel,
       monitorPanel
     } = refs;
-    if (!leftColumn || !rightColumn || !expandedLeftTop || !configPanel || !simulatorPanel
-      || !parserPanel || !chartsPanel || !monitorPanel) {
+    if (!leftColumn || !rightColumn || !expandedLeftTop || !configPanel || !parserPanel || !chartsPanel || !monitorPanel) {
       return;
     }
 
     expandedLeftTop.appendChild(configPanel);
-    expandedLeftTop.appendChild(simulatorPanel);
     leftColumn.appendChild(expandedLeftTop);
     if (state.layoutExpanded) {
       // Graph mode hides the monitor (see style.css), so the parser panel and
@@ -2615,22 +2611,17 @@
       rightColumn.appendChild(chartsPanel);
     } else {
       rightColumn.appendChild(monitorPanel);
-      // Settings hidden, results shown: see applyLayoutModePanels().
-      rightColumn.appendChild(parserPanel);
     }
   }
 
-  /* Shows the parse configuration only in the graph view.
+  /* The parse panel belongs to the parse view.
 
-     The configuration is what defines the charts, and the charts are only in
-     the graph view; in monitor mode the panel is the live result alone, with
-     the settings and the expand toggle both out of the way. The body class
-     does the hiding rather than a second code path, so the same panel is one
-     element either way and the persisted collapse state still applies when
-     the user switches back. */
+     The CSS keys off `layout-expanded` (see the .parser-panel rule), so this
+     only has to do the two things CSS cannot: keep the settings collapse
+     consistent with the persisted state, and hide the monitor chip, which is
+     the one piece of simulator UI that crosses over into the monitor view. */
   function applyLayoutModePanels() {
-    const showSettings = Boolean(state.layoutExpanded);
-    appEl.classList.toggle('parser-settings-inline', !showSettings);
+    applySimulationMonitorChip();
     applyParserPanelOpen();
   }
 
@@ -2667,17 +2658,14 @@
 
   /* Parse-settings collapse.
 
-     The body is configuration only — the live results sit outside it — so
-     collapsing hides configuration and nothing else. It only applies in the
-     graph view: in monitor mode the whole settings block is out of the way
-     anyway (see applyLayoutModePanels), and a toggle there would be offering to
-     reveal something the mode deliberately does not show. The persisted state
-     is left untouched, so switching back to graph mode restores what the user
-     had. */
+     The body is configuration only — the simulator and the live results sit
+     outside it — so collapsing hides the rule and the structure table and
+     nothing else. The panel itself is parse-view-only now (see
+     applyLayoutModePanels), so this no longer has to reason about the view:
+     what is left is the user's own choice, and it is remembered. */
   function applyParserPanelOpen() {
     const open = Boolean(state.ui.parserPanelOpen);
-    const settingsAvailable = Boolean(state.layoutExpanded);
-    refs.parserPanelBody?.classList.toggle('hidden', !open || !settingsAvailable);
+    refs.parserPanelBody?.classList.toggle('hidden', !open);
     refs.parserPanelToggle?.setAttribute('aria-expanded', String(open));
     const label = refs.parserPanelToggle?.querySelector('.parser-panel-toggle-text');
     if (label) label.textContent = open ? t('收起') : t('展开');
