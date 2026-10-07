@@ -6185,3 +6185,107 @@ body.compact-single.layout-expanded .device-meta-stack {
   color: var(--sim-text);
   background: var(--sim-soft);
 }
+
+/* ============================================================================
+   Monitor toolbar control heights
+
+   Measured with a selector that catches every visible control, the toolbar had
+   four heights from three mechanisms:
+
+     39px  Export log / 清空缓存   .secondary-btn padding: 10px 16px
+     34px  the labelled chips      .term-field min-height 30px wrapping a
+                                    32px custom-select trigger
+     32px  the six select triggers --control-h
+     30px  view switch, Echo       min-height: 30px
+
+   One value now, and scoped to the toolbar: .secondary-btn is used at other
+   sizes elsewhere (the chart strip, the send panel) where 39px is correct, and
+   .mode-tabs also appears in the parser panel outside the toolbar.
+   ========================================================================== */
+
+.monitor-toolbar .secondary-btn,
+.monitor-toolbar .mode-tabs .mode-tab {
+  height: var(--control-h);
+  min-height: var(--control-h);
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The labelled chip becomes a frame around the control rather than a box that
+   contains it, which is what produced 30 + 2px borders + a nested 32px
+   trigger. Same pattern as .toggle-row after the rail height unification. */
+.monitor-toolbar .term-field {
+  height: var(--control-h);
+  min-height: var(--control-h);
+  padding: 0 9px;
+  box-sizing: border-box;
+}
+
+.monitor-toolbar .term-field > .custom-select {
+  /* An explicit height is required: height:100% against an auto-height parent
+     resolves to auto, which left the trigger at 30px. */
+  height: var(--control-h);
+  min-height: 0;
+}
+
+.monitor-toolbar .term-field > .custom-select .custom-select-trigger {
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+/* ============================================================================
+   Monitor toolbar control heights
+
+   Measured with a selector that catches every visible control, the toolbar had
+   four heights from three mechanisms:
+
+     39px  Export log / 清空缓存   .secondary-btn padding: 10px 16px
+     34px  the labelled chips      .term-field min-height 30px wrapping a
+                                    32px custom-select trigger
+     32px  the six select triggers --control-h
+     30px  view switch, Echo       min-height: 30px
+
+   One value now, and scoped to the toolbar: .secondary-btn is used at other
+   sizes elsewhere (the chart strip, the send panel) where 39px is correct, and
+   .mode-tabs also appears in the parser panel outside the toolbar.
+   ========================================================================== */
+
+.monitor-toolbar .secondary-btn,
+.monitor-toolbar .mode-tabs .mode-tab {
+  height: var(--control-h);
+  min-height: var(--control-h);
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The labelled chip becomes a frame around the control rather than a box that
+   contains it, which is what produced 30 + 2px borders + a nested 32px
+   trigger. Same pattern as .toggle-row after the rail height unification. */
+.monitor-toolbar .term-field {
+  height: var(--control-h);
+  min-height: var(--control-h);
+  padding: 0 9px;
+  box-sizing: border-box;
+}
+
+.monitor-toolbar .term-field > .custom-select {
+  /* An explicit height is required: height:100% against an auto-height parent
+     resolves to auto, which left the trigger at 30px. */
+  height: var(--control-h);
+  min-height: 0;
+}
+
+.monitor-toolbar .term-field > .custom-select .custom-select-trigger {
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
