@@ -7,7 +7,7 @@
  *   bootstrap.js -> vendor/xterm/* -> app.core.js -> app.terminal.js -> app.main.js
  * ==========================================================================*/
 (() => {
-  const VERSION = '0.4.0';
+  const VERSION = '0.4.1';
   const ONLINE_VERSION_URL = 'https://ra9fael.github.io/SerialCanvas/';
   const VERSION_MODAL_SEEN_KEY = 'serialweb:version-modal-seen';
   const MAX_DERIVED_LOG_LINES = 320;
@@ -332,6 +332,18 @@
   const LIVE_BUFFER_DEFAULT = 1048576;
   const TERMINAL_SCROLLBACK_SIZES = [5000, 20000, 100000];
   const TERMINAL_SCROLLBACK_DEFAULT = 20000;
+  /* Editable ranges for the combo controls. The *_SIZES lists above are the
+     menu presets, NOT a validation whitelist any more: a typed value is
+     clamped into these ranges, because the lists are suggestions and a value
+     saved by the user must survive a reload. */
+  const LIVE_BUFFER_MIN = 65536;
+  const LIVE_BUFFER_MAX = 33554432;
+  const TERMINAL_SCROLLBACK_MIN = 100;
+  const TERMINAL_SCROLLBACK_MAX = 1000000;
+  const SIMULATION_INTERVAL_MIN = 10;
+  const SIMULATION_INTERVAL_MAX = 60000;
+  const SIMULATION_BURST_MIN = 1;
+  const SIMULATION_BURST_MAX = 100;
   const TERMINAL_READY_HINT_TEXT = '—— 串口终端已就绪：直接键入即发送（Ctrl+C/Ctrl+D/方向键等原样透传给设备）；如设备不回显，请打开“回显” ——';
 
   const refs = {
@@ -476,9 +488,17 @@
     termOutput: document.getElementById('term-output'),
     termNewline: document.getElementById('term-newline'),
     termFont: document.getElementById('term-font'),
-    monoSizePreset: document.getElementById('mono-size-preset'),
-    monoSizeCustom: document.getElementById('mono-size-custom'),
-    monoSizeCustomField: document.getElementById('mono-size-custom-field'),
+    monoSizeInput: document.getElementById('mono-size-input'),
+    monoSizeToggle: document.getElementById('mono-size-toggle'),
+    monoSizeMenu: document.getElementById('mono-size-menu'),
+    termScrollbackToggle: document.getElementById('term-scrollback-toggle'),
+    termScrollbackMenu: document.getElementById('term-scrollback-menu'),
+    liveBufferSizeToggle: document.getElementById('live-buffer-size-toggle'),
+    liveBufferSizeMenu: document.getElementById('live-buffer-size-menu'),
+    simulationIntervalToggle: document.getElementById('simulation-interval-toggle'),
+    simulationIntervalMenu: document.getElementById('simulation-interval-menu'),
+    simulationBurstToggle: document.getElementById('simulation-burst-toggle'),
+    simulationBurstMenu: document.getElementById('simulation-burst-menu'),
     termSkin: document.getElementById('term-skin'),
     termScrollback: document.getElementById('term-scrollback'),
     liveBufferSize: document.getElementById('live-buffer-size'),
@@ -855,10 +875,12 @@
   }
 
   /* Current live-buffer budget in characters. Read from state so the toolbar
-     select can change it; falls back to the default for an unknown value. */
+     combo can change it; a saved custom value is clamped into range rather
+     than rejected, and an unknown value falls back to the default. */
   function liveBufferLimit() {
-    var size = Number(state.settings.liveBufferSize);
-    return LIVE_BUFFER_SIZES.includes(size) ? size : LIVE_BUFFER_DEFAULT;
+    var size = Math.round(Number(state.settings.liveBufferSize));
+    if (!Number.isFinite(size)) return LIVE_BUFFER_DEFAULT;
+    return Math.min(LIVE_BUFFER_MAX, Math.max(LIVE_BUFFER_MIN, size));
   }
 
   function trimRealtimeRawChunks() {
@@ -2547,15 +2569,73 @@
     refs.baudRatePresetMenu.classList.remove('open');
   }
 
+  function closeComboMenus() {
+    document.querySelectorAll('.combo-anchor.open').forEach((el) => el.classList.remove('open'));
+    document.querySelectorAll('.combo-menu.open').forEach((el) => el.classList.remove('open'));
+  }
+
   function toggleBaudRateMenu() {
     const willOpen = !refs.baudRatePresetMenu.classList.contains('open');
     closeTimelinePicker();
     closeCustomSelectMenus();
+    closeComboMenus();
     document.querySelectorAll('.floating-menu.open').forEach((menu) => {
       if (menu !== refs.baudRatePresetMenu) menu.classList.remove('open');
     });
     refs.baudRateAnchor.classList.toggle('open', willOpen);
     refs.baudRatePresetMenu.classList.toggle('open', willOpen);
+  }
+
+  /* Wires one "baud-style" combo: an input the user can type into, a ▾ button
+     that opens a preset menu, and an apply() that receives the clamped value.
+
+     The input is authoritative. Menus are presets, not a validation whitelist:
+     a typed value goes through parse() + clamp() and is written back into the
+     box so what the user sees is what was applied. Every registered combo
+     closes the others when opened, and the baud menu closes combos via
+     closeComboMenus() in toggleBaudRateMenu(). */
+  function wireCombo({ anchor, input, button, menu, parse, clamp, apply, onOpen }) {
+    if (!anchor || !input || !button || !menu || typeof apply !== 'function') return;
+    const close = () => {
+      anchor.classList.remove('open');
+      menu.classList.remove('open');
+    };
+    const open = () => {
+      closeTimelinePicker();
+      closeCustomSelectMenus();
+      closeComboMenus();
+      closeBaudRateMenu();
+      anchor.classList.add('open');
+      menu.classList.add('open');
+      onOpen?.();
+    };
+    const commit = () => {
+      const parsed = typeof parse === 'function' ? parse(input.value) : Number(input.value);
+      const value = typeof clamp === 'function' ? clamp(parsed) : parsed;
+      input.value = String(value);
+      apply(value);
+    };
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (menu.classList.contains('open')) close();
+      else open();
+    });
+    menu.addEventListener('click', (event) => {
+      const option = event.target.closest('[data-combo-value]');
+      if (!option) return;
+      input.value = option.dataset.comboValue;
+      commit();
+      close();
+    });
+    input.addEventListener('change', commit);
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        commit();
+        input.blur();
+      }
+    });
   }
 
   function syncCompactLayoutState() {
@@ -2954,12 +3034,14 @@
     if (target?.closest('.menu-anchor')) return;
     if (target?.closest('#timeline-ribbon-shell')) return;
     if (target?.closest('#baud-rate-anchor')) return;
+    if (target?.closest('.combo-anchor')) return;
     if (target?.closest('.custom-select')) return;
     if (!target.closest('.menu-anchor')) {
       setPendingUserConfigAction('');
     }
     document.querySelectorAll('.floating-menu.open').forEach((menu) => menu.classList.remove('open'));
     refs.baudRateAnchor?.classList.remove('open');
+    closeComboMenus();
     closeCustomSelectMenus();
     closeTimelinePicker();
   }

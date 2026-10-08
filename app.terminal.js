@@ -103,19 +103,21 @@
   }
 
   function getTerminalFontSize() {
-    return clampTerminalFontSize(refs.monoSizeCustom?.value);
+    return clampTerminalFontSize(refs.monoSizeInput?.value);
   }
 
   /* xterm scrollback, settable from the toolbar. Cheap compared with the DOM
      log: only text nodes are retained and changing it does not re-render. */
   function getTerminalScrollback() {
-    var size = Number(state.settings.terminalScrollback);
-    return TERMINAL_SCROLLBACK_SIZES.includes(size) ? size : TERMINAL_SCROLLBACK_DEFAULT;
+    var size = Math.round(Number(state.settings.terminalScrollback));
+    if (!Number.isFinite(size)) return TERMINAL_SCROLLBACK_DEFAULT;
+    return Math.min(TERMINAL_SCROLLBACK_MAX, Math.max(TERMINAL_SCROLLBACK_MIN, size));
   }
 
   function setTerminalScrollback(value) {
-    var size = Number(value);
-    if (!TERMINAL_SCROLLBACK_SIZES.includes(size)) return;
+    var size = Math.round(Number(value));
+    if (!Number.isFinite(size)) return;
+    size = Math.min(TERMINAL_SCROLLBACK_MAX, Math.max(TERMINAL_SCROLLBACK_MIN, size));
     state.settings.terminalScrollback = size;
     const term = terminalRuntime.term;
     if (term) term.options.scrollback = size;
@@ -175,14 +177,10 @@
 
   function setTerminalFontSize(value) {
     const size = clampTerminalFontSize(value);
-    if (refs.monoSizeCustom) refs.monoSizeCustom.value = String(size);
-    // A non-preset size has to leave the preset list on "custom", otherwise the
-    // select would show the nearest preset and the two controls would disagree.
-    if (refs.monoSizePreset) {
-      const isPreset = Array.from(refs.monoSizePreset.options)
-        .some((option) => option.value === String(size));
-      refs.monoSizePreset.value = isPreset ? String(size) : 'custom';
-      refs.monoSizeCustomField?.classList.toggle('hidden', isPreset);
+    // The combo input is the single font-size control now: the wireCombo
+    // helper has already written the clamped value back into it.
+    if (refs.monoSizeInput && refs.monoSizeInput.value !== String(size)) {
+      refs.monoSizeInput.value = String(size);
     }
     applyMonoSize();
     applyTerminalMetrics();
@@ -363,9 +361,13 @@
      never consults the ctrl flag, so Ctrl+Enter and Enter produce identical
      bytes. A button for it would claim a distinction that does not exist. */
   const TERM_KEY_SEQUENCES = {
-    // Submission
+    // Submission. ^M and ^J are the raw CR/LF bytes: Enter follows the
+    // newline-mode setting, so with the mode at CR there is no way to send a
+    // bare LF — and parser testing regularly wants exactly one byte.
     enter: '\r',
     'alt-enter': '\x1b\r',
+    'ctrl-m': '\r',
+    'ctrl-j': '\n',
     // Navigation
     up: '\x1b[A',
     down: '\x1b[B',
@@ -386,7 +388,8 @@
     f2: '\x1bOQ',
     f3: '\x1bOR',
     f4: '\x1bOS',
-    // Editing
+    // Editing. backspace sends DEL 0x7f; ^H sends BS 0x08 — some firmware
+    // honours only one of the two, so both are bound.
     backspace: '\x7f',
     'ctrl-h': '\x08',
     'ctrl-a': '\x01',
@@ -396,6 +399,8 @@
     'ctrl-k': '\x0b',
     'ctrl-u': '\x15',
     'ctrl-w': '\x17',
+    'alt-backspace': '\x1b\x7f',
+    'alt-d': '\x1bd',
     'ctrl-t': '\x14',
     'ctrl-y': '\x19',
     'ctrl-d': '\x04',
@@ -405,10 +410,16 @@
     'ctrl-n': '\x0e',
     'ctrl-o': '\x0f',
     'ctrl-l': '\x0c',
-    // Control bytes
+    // Control bytes. ^\ joins ^C/^D/^Z/^G as a real interrupt (SIGQUIT);
+    // ^S/^Q are flow control, deliberately NOT here — the amber styling
+    // marks bytes that interrupt something, and freezing output is not that.
     'ctrl-c': '\x03',
+    'ctrl-d': '\x04',
     'ctrl-z': '\x1a',
     'ctrl-g': '\x07',
+    'ctrl-backslash': '\x1c',
+    'ctrl-s': '\x13',
+    'ctrl-q': '\x11',
     'ctrl-v': '\x16',
     'ctrl-x': '\x18',
     tab: '\t',
@@ -442,7 +453,9 @@
       id: 'submit',
       buttons: [
         { key: 'enter', label: 'Enter ⏎', tip: 'Enter 回车（遵循换行设置）', wide: true },
-        { key: 'alt-enter', label: 'Alt-⏎', tip: 'Alt-Enter 发送 ESC + CR' }
+        { key: 'alt-enter', label: 'Alt-⏎', tip: 'Alt-Enter 发送 ESC + CR' },
+        { key: 'ctrl-m', label: '^M', tip: '^M 裸 CR（0x0D，不受换行设置影响）' },
+        { key: 'ctrl-j', label: '^J', tip: '^J 裸 LF（0x0A，不受换行设置影响）' }
       ]
     },
     {
@@ -477,11 +490,14 @@
     {
       id: 'edit',
       buttons: [
-        { key: 'backspace', label: 'Bksp', tip: 'Backspace 退格' },
+        { key: 'backspace', label: 'Bksp', tip: 'Backspace 退格（DEL 0x7F）' },
+        { key: 'ctrl-h', label: '^H', tip: '^H 退格（BS 0x08，部分固件只认这个字节）' },
         { key: 'delete', label: 'Del', tip: 'Delete 删除' },
         { key: 'ctrl-k', label: '^K', tip: '^K 删到行尾' },
         { key: 'ctrl-u', label: '^U', tip: '^U 删到行首' },
         { key: 'ctrl-w', label: '^W', tip: '^W 删前一个词' },
+        { key: 'alt-backspace', label: 'Alt-⌫', tip: 'Alt-Backspace 删前一个词（ESC + DEL）' },
+        { key: 'alt-d', label: 'Alt-D', tip: 'Alt-D 删后一个词（ESC + d）' },
         { key: 'ctrl-t', label: '^T', tip: '^T 转置字符' },
         { key: 'ctrl-x', label: '^X', tip: '^X 切换转置' },
         { key: 'ctrl-y', label: '^Y', tip: '^Y 召回' },
@@ -504,12 +520,20 @@
       ]
     },
     {
+      id: 'flow',
+      buttons: [
+        { key: 'ctrl-s', label: '^S', tip: '^S XOFF 暂停输出（0x13）——误按后屏幕冻结就用它' },
+        { key: 'ctrl-q', label: '^Q', tip: '^Q XON 恢复输出（0x11）' }
+      ]
+    },
+    {
       id: 'control',
       buttons: [
         { key: 'ctrl-c', label: '^C', tip: '^C 中断前台进程（0x03）' },
         { key: 'ctrl-d', label: '^D', tip: '^D EOF / 注销（0x04）' },
         { key: 'ctrl-z', label: '^Z', tip: '^Z 挂起到后台（0x1A）' },
-        { key: 'ctrl-g', label: '^G', tip: '^G 中止' }
+        { key: 'ctrl-g', label: '^G', tip: '^G 中止' },
+        { key: 'ctrl-backslash', label: '^\\', tip: '^\\ SIGQUIT（0x1C）' }
       ]
     }
   ];
@@ -517,20 +541,20 @@
 
   /* Which row of the key bar each group lands on.
 
-     44 keys in one row wrapped wherever the window happened to end, so the bar
+     52 keys in one row wrapped wherever the window happened to end, so the bar
      changed height as the window resized and shoved the terminal around. Two
      fixed rows keep the bar's height roughly constant — and "roughly" only
      holds if the two rows carry comparable width, because each row still wraps
      on its own.
 
-     Hence this split rather than the obvious "hot keys on top": by measured
-     button width the chosen pair is ~790px / ~815px, while putting submit +
-     edit + history on top leaves the bottom row at ~960px against ~650px, i.e.
-     a row that wraps while the other does not. The cost is that Bksp and Del
-     sit at the head of the second row instead of beside Enter; they are the
-     first thing on it, which is where the eye goes next anyway. */
+     Hence this split rather than the obvious "hot keys on top": the four
+     lightweight groups (submit now carries ^M/^J) plus flow sit on top, the
+     three heavy ones below. Measured in the audit at 52 keys the pair is
+     within a few percent; audit/verify-keybar.mjs asserts the split stays
+     balanced, and the cost is still that Bksp opens row two instead of
+     sitting beside Enter. */
   const TERM_KEY_ROWS = [
-    ['submit', 'history', 'move'],
+    ['submit', 'history', 'move', 'flow'],
     ['edit', 'page', 'control']
   ];
 

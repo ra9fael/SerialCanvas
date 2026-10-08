@@ -13,7 +13,7 @@ SerialCanvas 是一款基于 Web Serial API 的浏览器串口调试与数据绘
 - **时间线录制** —— 把一次会话录制为原始字节，冻结实时视图，拖动与回放已归档的抓取，
   并以 `.bin` / `.csv` / `.txt` 导出导入。
 
-当前版本：**v0.4.0**。本分叉的主页：
+当前版本：**v0.4.1**。本分叉的主页：
 <https://ra9fael.github.io/SerialCanvas/> ·
 <https://github.com/ra9fael/SerialCanvas>
 

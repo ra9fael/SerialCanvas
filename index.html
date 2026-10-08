@@ -331,14 +331,26 @@
                  the other one used to sit there disabled, which is a dead end
                  that explains nothing. -->
             <div class="simulation-config is-open">
-              <label class="term-field" title="两次发送之间的间隔">
+              <div class="term-field" title="两次发送之间的间隔（10–60000 毫秒，可直接输入）">
                 <span>间隔</span>
-                <select id="simulation-interval"></select>
-              </label>
-              <label class="term-field" title="每个间隔发送的帧数，用于模拟一次应答多帧的设备">
+                <div id="simulation-interval-anchor" class="combo-anchor">
+                  <div class="combo">
+                    <input id="simulation-interval" type="number" min="10" max="60000" step="1" inputmode="numeric" spellcheck="false" autocomplete="off">
+                    <button id="simulation-interval-toggle" type="button" aria-label="选择常用间隔">▾</button>
+                  </div>
+                  <div id="simulation-interval-menu" class="floating-menu combo-menu"></div>
+                </div>
+              </div>
+              <div class="term-field" title="每个间隔发送的帧数（1–100，可直接输入），用于模拟一次应答多帧的设备">
                 <span>每次帧数</span>
-                <select id="simulation-burst"></select>
-              </label>
+                <div id="simulation-burst-anchor" class="combo-anchor">
+                  <div class="combo">
+                    <input id="simulation-burst" type="number" min="1" max="100" step="1" inputmode="numeric" spellcheck="false" autocomplete="off">
+                    <button id="simulation-burst-toggle" type="button" aria-label="选择常用帧数">▾</button>
+                  </div>
+                  <div id="simulation-burst-menu" class="floating-menu combo-menu"></div>
+                </div>
+              </div>
 
               <div class="simulation-template-field" data-sim-template="text">
                 <div class="simulation-field-head">
@@ -549,41 +561,54 @@
               </label>
             </div>
             <div id="mono-size-control" class="term-toolbar-controls">
-              <label class="term-field" title="等宽字号：同时作用于终端、收发日志与解析预览（8-48，终端内可 Ctrl + 滚轮缩放）">
+              <div class="term-field" title="等宽字号：同时作用于终端、收发日志与解析预览（8-48，可直接输入，终端内可 Ctrl + 滚轮缩放）">
                 <span>字号</span>
-                <select id="mono-size-preset">
-                  <option value="10">10</option>
-                  <option value="11">11</option>
-                  <option value="12" selected>12</option>
-                  <option value="14">14</option>
-                  <option value="16">16</option>
-                  <option value="18">18</option>
-                  <option value="20">20</option>
-                  <option value="custom">自定义</option>
-                </select>
-              </label>
-              <label id="mono-size-custom-field" class="term-field hidden" title="自定义字号（8-48）">
-                <span>自定义</span>
-                <input id="mono-size-custom" type="number" min="8" max="48" step="1" value="12" inputmode="numeric">
-              </label>
+                <div id="mono-size-anchor" class="combo-anchor">
+                  <div class="combo">
+                    <input id="mono-size-input" type="number" min="8" max="48" step="1" inputmode="numeric" value="12" spellcheck="false" autocomplete="off">
+                    <button id="mono-size-toggle" type="button" aria-label="选择常用字号">▾</button>
+                  </div>
+                  <div id="mono-size-menu" class="floating-menu combo-menu">
+                    <button type="button" data-combo-value="10">10</button>
+                    <button type="button" data-combo-value="11">11</button>
+                    <button type="button" data-combo-value="12">12</button>
+                    <button type="button" data-combo-value="14">14</button>
+                    <button type="button" data-combo-value="16">16</button>
+                    <button type="button" data-combo-value="18">18</button>
+                    <button type="button" data-combo-value="20">20</button>
+                  </div>
+                </div>
+              </div>
             </div>
             <div id="buffer-toolbar-controls" class="term-toolbar-controls">
-              <label class="term-field" title="xterm 回滚缓冲保留的行数">
+              <div class="term-field" title="xterm 回滚缓冲保留的行数（100–1000000，可直接输入）">
                 <span>回滚行数</span>
-                <select id="term-scrollback">
-                  <option value="5000">5000</option>
-                  <option value="20000" selected>20000</option>
-                  <option value="100000">100000</option>
-                </select>
-              </label>
-              <label class="term-field" title="收发日志保留的字符总量。追加渲染后上限由内存决定，而非每帧重建的耗时">
+                <div id="term-scrollback-anchor" class="combo-anchor">
+                  <div class="combo">
+                    <input id="term-scrollback" type="number" min="100" max="1000000" step="1" inputmode="numeric" value="20000" spellcheck="false" autocomplete="off">
+                    <button id="term-scrollback-toggle" type="button" aria-label="选择常用回滚行数">▾</button>
+                  </div>
+                  <div id="term-scrollback-menu" class="floating-menu combo-menu">
+                    <button type="button" data-combo-value="5000">5000</button>
+                    <button type="button" data-combo-value="20000">20000</button>
+                    <button type="button" data-combo-value="100000">100000</button>
+                  </div>
+                </div>
+              </div>
+              <div class="term-field" title="收发日志保留的字符总量（65536–33554432，可直接输入）。追加渲染后上限由内存决定，而非每帧重建的耗时">
                 <span>日志字符</span>
-                <select id="live-buffer-size">
-                  <option value="262144">262144</option>
-                  <option value="1048576" selected>1048576</option>
-                  <option value="4194304">4194304</option>
-                </select>
-              </label>
+                <div id="live-buffer-size-anchor" class="combo-anchor">
+                  <div class="combo">
+                    <input id="live-buffer-size" type="number" min="65536" max="33554432" step="1" inputmode="numeric" value="1048576" spellcheck="false" autocomplete="off">
+                    <button id="live-buffer-size-toggle" type="button" aria-label="选择常用日志上限">▾</button>
+                  </div>
+                  <div id="live-buffer-size-menu" class="floating-menu combo-menu">
+                    <button type="button" data-combo-value="262144">262144</button>
+                    <button type="button" data-combo-value="1048576">1048576</button>
+                    <button type="button" data-combo-value="4194304">4194304</button>
+                  </div>
+                </div>
+              </div>
             </div>
             <div id="term-toolbar-controls" class="term-toolbar-controls">
               <label class="term-field" title="发送时追加的行结束符">
@@ -792,6 +817,13 @@
         <div class="version-changelog">
           <div class="version-changelog-title">更新日志</div>
           <div class="version-release">
+            <strong>v0.4.1 版本 · 26/10/8</strong>
+            <ul>
+              <li>终端快捷键新增 8 个：^S / ^Q（XOFF/XON 流控，单独成组、不用琥珀色）、^\\（SIGQUIT， 中断组补齐）、^H（BS 0x08——字节映射早就有，按钮一直缺）、^M / ^J（裸 CR/LF， 不受换行模式影响）以及 Alt-D / Alt-Backspace（向后/向前删一个词）。共 52 键 7 组， 两行宽度实测偏差 4.6%。</li>
+              <li>五个纯下拉控件——字号、回滚行数、日志字符、模拟间隔、每次帧数——改为波特率式组合框： 既能手动输入又能选预设。原先的处理器是成员白名单，输入值不在名单就被静默丢弃；现改为 按范围钳制（字号 8–48、回滚 100–100 万行、日志 64K–32M 字符、间隔 10–60000 毫秒、 帧数 1–100），保存过的自定义值刷新后仍在。字号「自定义」的两步交互一并删除。</li>
+            </ul>
+          </div>
+          <div class="version-release">
             <strong>v0.4.0 版本 · 26/10/8</strong>
             <ul>
               <li>项目更名为 SerialCanvas：本项目从 SerialWeb v1.6 出发、此后独立发展，因此不再使用 fork 的表述。 docs/fork.md 更名为来源与致谢，关于弹窗只保留原始项目链接，UI 借鉴说明同时 写入 PICOTTY。构建产物（dist/SerialCanvas.html）、 离线包文件名与 Pages 工作流一并随新名；AGPL-3.0 与原始版权不变。</li>
@@ -827,13 +859,6 @@
               <li>修复串口接收数据特殊情况下监视器多出空行的问题。</li>
               <li>优化设备连接管理中组件的显示效果。</li>
               <li>优化图框的部分显示效果和操作逻辑。</li>
-            </ul>
-          </div>
-          <div class="version-release">
-            <strong>v1.5 版本 · 26/7/9</strong>
-            <ul>
-              <li>"自动硬件流控"更名为"RTS/CTS 流控"，名称更准确。</li>
-              <li>重构 TX/RX 收发与换行符显示逻辑，优化监视器渲染与事件处理。</li>
             </ul>
           </div>
         </div>

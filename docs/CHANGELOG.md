@@ -7,6 +7,19 @@ they shipped with. `tools/set-version.py` writes every section but those.
 Everything numbered `1.x` is an upstream release by the original author,
 [Conductance-lab](https://conductance-lab.xyz) — see [origin & credits](acknowledgements.md).
 
+## v0.4.1 — 2026/10/8
+
+- Eight new terminal quick keys: ^S / ^Q (XOFF/XON flow control, in a new non-amber group),
+  ^\ (SIGQUIT, completing the interrupt set), ^H (BS 0x08 — the mapping existed, the button
+  did not), ^M / ^J (raw CR/LF that ignore the newline-mode setting) and Alt-D / Alt-Backspace
+  (kill word forward/backward). 52 keys in 7 groups; the row split re-measured at 4.6% skew.
+- The five select-only controls — font size, scrollback lines, log character budget, simulator
+  interval and frames-per-tick — are baud-style combos now: type a value or pick a preset.
+  Their handlers were membership whitelists that silently dropped any typed value; they clamp
+  into explicit ranges instead (font 8–48, scrollback 100–1M, log 64K–32M chars, interval
+  10–60000 ms, burst 1–100), and saved custom values survive a reload. The two-step
+  "自定义" font-size flow is gone.
+
 ## v0.4.0 — 2026/10/8
 
 - The project is renamed **SerialCanvas**: it started from SerialWeb `v1.6` and has developed

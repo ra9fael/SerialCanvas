@@ -242,7 +242,10 @@
     // A burst emits several frames per tick, which is how a device that answers
     // more than once per poll looks. Each goes through queueRxBytes() separately
     // so line splitting and parsing behave exactly as they would on the wire.
-    const burst = SIMULATION_BURSTS.includes(Number(sim.burst)) ? Number(sim.burst) : SIMULATION_BURST_DEFAULT;
+    const burstRaw = Math.round(Number(sim.burst));
+    const burst = Number.isFinite(burstRaw)
+      ? Math.min(SIMULATION_BURST_MAX, Math.max(SIMULATION_BURST_MIN, burstRaw))
+      : SIMULATION_BURST_DEFAULT;
     for (let index = 0; index < burst; index += 1) {
       // Captured before the increment: the template's {n}/{tick} must agree
       // with the counter the frame itself was built from. It used to be read
@@ -309,9 +312,8 @@
 
   function simulationIntervalMs() {
     const value = Number(state.settings.simulation.intervalMs);
-    return SIMULATION_INTERVALS.some((item) => item.value === value)
-      ? value
-      : SIMULATION_INTERVAL_DEFAULT;
+    const clamped = Math.min(SIMULATION_INTERVAL_MAX, Math.max(SIMULATION_INTERVAL_MIN, Math.round(value)));
+    return Number.isFinite(value) ? clamped : SIMULATION_INTERVAL_DEFAULT;
   }
 
   function startSimulation() {
@@ -351,7 +353,10 @@
     if (refs.simulationScript) refs.simulationScript.value = sim.scriptId;
     if (refs.simulationInterval) refs.simulationInterval.value = String(simulationIntervalMs());
     if (refs.simulationBurst) {
-      const burst = SIMULATION_BURSTS.includes(Number(sim.burst)) ? Number(sim.burst) : SIMULATION_BURST_DEFAULT;
+      const burstRaw = Math.round(Number(sim.burst));
+    const burst = Number.isFinite(burstRaw)
+      ? Math.min(SIMULATION_BURST_MAX, Math.max(SIMULATION_BURST_MIN, burstRaw))
+      : SIMULATION_BURST_DEFAULT;
       refs.simulationBurst.value = String(burst);
     }
     // Only write the template field when it differs, so typing is not
@@ -443,22 +448,26 @@
         host.appendChild(option);
       });
     }
-    const intervalHost = refs.simulationInterval;
-    if (intervalHost && !intervalHost.options.length) {
+    // Combo presets, not option lists: the interval/burst inputs are typed
+    // numbers, and these menus only offer the common shapes.
+    const intervalMenu = refs.simulationIntervalMenu;
+    if (intervalMenu && !intervalMenu.children.length) {
       SIMULATION_INTERVALS.forEach((item) => {
-        const option = document.createElement('option');
-        option.value = String(item.value);
-        option.textContent = t(item.label);
-        intervalHost.appendChild(option);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.comboValue = String(item.value);
+        button.textContent = t(item.label);
+        intervalMenu.appendChild(button);
       });
     }
-    const burstHost = refs.simulationBurst;
-    if (burstHost && !burstHost.options.length) {
+    const burstMenu = refs.simulationBurstMenu;
+    if (burstMenu && !burstMenu.children.length) {
       SIMULATION_BURSTS.forEach((count) => {
-        const option = document.createElement('option');
-        option.value = String(count);
-        option.textContent = String(count);
-        burstHost.appendChild(option);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.comboValue = String(count);
+        button.textContent = String(count);
+        burstMenu.appendChild(button);
       });
     }
   }
@@ -6629,11 +6638,11 @@
       newlineMode: ['r', 'n', 'rn'].includes(source.newlineMode) ? source.newlineMode : state.settings.newlineMode,
       appendNewline: typeof source.appendNewline === 'boolean' ? source.appendNewline : state.settings.appendNewline,
       // Whitelist rebuild: unlisted keys are dropped silently.
-      liveBufferSize: LIVE_BUFFER_SIZES.includes(Number(source.liveBufferSize))
-        ? Number(source.liveBufferSize)
+      liveBufferSize: Number.isFinite(Number(source.liveBufferSize))
+        ? Math.min(LIVE_BUFFER_MAX, Math.max(LIVE_BUFFER_MIN, Math.round(Number(source.liveBufferSize))))
         : state.settings.liveBufferSize,
-      terminalScrollback: TERMINAL_SCROLLBACK_SIZES.includes(Number(source.terminalScrollback))
-        ? Number(source.terminalScrollback)
+      terminalScrollback: Number.isFinite(Number(source.terminalScrollback))
+        ? Math.min(TERMINAL_SCROLLBACK_MAX, Math.max(TERMINAL_SCROLLBACK_MIN, Math.round(Number(source.terminalScrollback))))
         : state.settings.terminalScrollback,
       // This function rebuilds the object field by field, so a new key has to be
       // listed here explicitly or the preference is silently dropped on reload.
@@ -6644,11 +6653,11 @@
         scriptId: SIMULATION_SCRIPT_IDS.includes(source.simulation?.scriptId)
           ? source.simulation.scriptId
           : state.settings.simulation.scriptId,
-        intervalMs: SIMULATION_INTERVALS.some((item) => item.value === Number(source.simulation?.intervalMs))
-          ? Number(source.simulation.intervalMs)
+        intervalMs: Number.isFinite(Number(source.simulation?.intervalMs))
+          ? Math.min(SIMULATION_INTERVAL_MAX, Math.max(SIMULATION_INTERVAL_MIN, Math.round(Number(source.simulation.intervalMs))))
           : state.settings.simulation.intervalMs,
-        burst: SIMULATION_BURSTS.includes(Number(source.simulation?.burst))
-          ? Number(source.simulation.burst)
+        burst: Number.isFinite(Number(source.simulation?.burst))
+          ? Math.min(SIMULATION_BURST_MAX, Math.max(SIMULATION_BURST_MIN, Math.round(Number(source.simulation.burst))))
           : state.settings.simulation.burst,
         template: typeof source.simulation?.template === 'string'
           ? source.simulation.template.slice(0, SIMULATION_TEMPLATE_MAX)
@@ -6961,8 +6970,8 @@
           enabled: Boolean(state.settings.simulation?.enabled),
           scriptId: state.settings.simulation?.scriptId || 'text-sensor',
           intervalMs: simulationIntervalMs(),
-          burst: SIMULATION_BURSTS.includes(Number(state.settings.simulation?.burst))
-            ? Number(state.settings.simulation.burst)
+          burst: Number.isFinite(Number(state.settings.simulation?.burst))
+            ? Math.min(SIMULATION_BURST_MAX, Math.max(SIMULATION_BURST_MIN, Math.round(Number(state.settings.simulation?.burst))))
             : SIMULATION_BURST_DEFAULT,
           template: String(state.settings.simulation?.template || '').slice(0, SIMULATION_TEMPLATE_MAX),
           frameTemplate: String(state.settings.simulation?.frameTemplate || '').slice(0, SIMULATION_FRAME_TEMPLATE_MAX),
@@ -8155,18 +8164,39 @@
       stopSimulation();
       startSimulation();
     };
-    refs.simulationInterval?.addEventListener('change', () => {
-      const value = Number(refs.simulationInterval.value);
-      if (SIMULATION_INTERVALS.some((item) => item.value === value)) {
+    // Interval/burst are baud-style combos: the typed value is authoritative
+    // and clamps into a range; the menus only offer the common shapes. The
+    // old membership whitelists silently dropped anything off-list.
+    wireCombo({
+      anchor: document.getElementById('simulation-interval-anchor'),
+      input: refs.simulationInterval,
+      button: refs.simulationIntervalToggle,
+      menu: refs.simulationIntervalMenu,
+      clamp: (value) => {
+        const ms = Math.round(Number(value));
+        if (!Number.isFinite(ms)) return SIMULATION_INTERVAL_DEFAULT;
+        return Math.min(SIMULATION_INTERVAL_MAX, Math.max(SIMULATION_INTERVAL_MIN, ms));
+      },
+      apply: (value) => {
         state.settings.simulation.intervalMs = value;
+        restartSimulationTimer();
+        scheduleLocalPrefsSave();
       }
-      restartSimulationTimer();
-      scheduleLocalPrefsSave();
     });
-    refs.simulationBurst?.addEventListener('change', () => {
-      const value = Number(refs.simulationBurst.value);
-      state.settings.simulation.burst = SIMULATION_BURSTS.includes(value) ? value : SIMULATION_BURST_DEFAULT;
-      scheduleLocalPrefsSave();
+    wireCombo({
+      anchor: document.getElementById('simulation-burst-anchor'),
+      input: refs.simulationBurst,
+      button: refs.simulationBurstToggle,
+      menu: refs.simulationBurstMenu,
+      clamp: (value) => {
+        const count = Math.round(Number(value));
+        if (!Number.isFinite(count)) return SIMULATION_BURST_DEFAULT;
+        return Math.min(SIMULATION_BURST_MAX, Math.max(SIMULATION_BURST_MIN, count));
+      },
+      apply: (value) => {
+        state.settings.simulation.burst = value;
+        scheduleLocalPrefsSave();
+      }
     });
     refs.simulationTemplate?.addEventListener('input', () => {
       const sim = state.settings.simulation;
@@ -8243,21 +8273,20 @@
       event.preventDefault();
       sendTerminalKey(button.dataset.termKey);
     });
-    refs.monoSizePreset?.addEventListener('change', () => {
-      const value = refs.monoSizePreset.value;
-      const isCustom = value === 'custom';
-      refs.monoSizeCustomField?.classList.toggle('hidden', !isCustom);
-      if (isCustom) {
-        refs.monoSizeCustom?.focus();
-        return;
+    // Baud-style combo: type a size or pick a preset; wireCombo commits on
+    // change/blur/Enter and after a preset click. applyMonoSize feeds three
+    // surfaces (xterm, manual log, parse preview) from one number.
+    wireCombo({
+      anchor: document.getElementById('mono-size-anchor'),
+      input: refs.monoSizeInput,
+      button: refs.monoSizeToggle,
+      menu: refs.monoSizeMenu,
+      parse: (raw) => (raw === '' ? TERMINAL_FONT_SIZE_DEFAULT : Number(raw)),
+      clamp: clampTerminalFontSize,
+      apply: (value) => {
+        setTerminalFontSize(value);
+        scheduleLocalPrefsSave();
       }
-      setTerminalFontSize(value);
-      scheduleLocalPrefsSave();
-    });
-    refs.monoSizeCustom?.addEventListener('change', () => {
-      const raw = refs.monoSizeCustom.value;
-      setTerminalFontSize(raw === '' ? TERMINAL_FONT_SIZE_DEFAULT : raw);
-      scheduleLocalPrefsSave();
     });
     refs.mobileConfigBackdrop.addEventListener('click', () => {
       closeTimelinePicker();
@@ -8628,19 +8657,42 @@
       clearRealtimeHistoryData();
     });
     refs.exportLogBtn?.addEventListener('click', exportLiveLog);
-    refs.termScrollback?.addEventListener('change', () => {
-      setTerminalScrollback(refs.termScrollback.value);
-      scheduleLocalPrefsSave();
+    // Scrollback: typed values clamp into [100, 1M]; the menu is presets only.
+    wireCombo({
+      anchor: document.getElementById('term-scrollback-anchor'),
+      input: refs.termScrollback,
+      button: refs.termScrollbackToggle,
+      menu: refs.termScrollbackMenu,
+      clamp: (value) => {
+        const size = Math.round(Number(value));
+        if (!Number.isFinite(size)) return TERMINAL_SCROLLBACK_DEFAULT;
+        return Math.min(TERMINAL_SCROLLBACK_MAX, Math.max(TERMINAL_SCROLLBACK_MIN, size));
+      },
+      apply: (value) => {
+        setTerminalScrollback(value);
+        scheduleLocalPrefsSave();
+      }
     });
-    refs.liveBufferSize?.addEventListener('change', () => {
-      const size = Number(refs.liveBufferSize.value);
-      if (!LIVE_BUFFER_SIZES.includes(size)) return;
-      state.settings.liveBufferSize = size;
-      // Apply immediately rather than waiting for the next append.
-      trimLiveEvents();
-      trimRealtimeRawChunks();
-      scheduleRefresh({ monitor: true, derived: true, charts: true });
-      scheduleLocalPrefsSave();
+    // Log budget: same shape. A typo like 50000000 used to be silently
+    // dropped by the whitelist; now it clamps to the 32M cap instead.
+    wireCombo({
+      anchor: document.getElementById('live-buffer-size-anchor'),
+      input: refs.liveBufferSize,
+      button: refs.liveBufferSizeToggle,
+      menu: refs.liveBufferSizeMenu,
+      clamp: (value) => {
+        const size = Math.round(Number(value));
+        if (!Number.isFinite(size)) return LIVE_BUFFER_DEFAULT;
+        return Math.min(LIVE_BUFFER_MAX, Math.max(LIVE_BUFFER_MIN, size));
+      },
+      apply: (value) => {
+        state.settings.liveBufferSize = value;
+        // Apply immediately rather than waiting for the next append.
+        trimLiveEvents();
+        trimRealtimeRawChunks();
+        scheduleRefresh({ monitor: true, derived: true, charts: true });
+        scheduleLocalPrefsSave();
+      }
     });
     refs.terminalJumpBtn.addEventListener('click', () => {
       forceTerminalToLatest();

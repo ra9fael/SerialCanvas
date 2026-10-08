@@ -2614,12 +2614,17 @@ html[lang="en"] .reconnect-chip .reconnect-label-text {
   grid-column: 1 / -1;
 }
 
-.baud-rate-anchor {
+/* Editable preset combos: an input the user can type into plus a ▾ preset
+   menu. The .baud-rate-* names are the original instance of the pattern and
+   stay as aliases so the serial form needs no edits. */
+.baud-rate-anchor,
+.combo-anchor {
   position: relative;
   min-width: 0;
 }
 
-.baud-rate-combo {
+.baud-rate-combo,
+.combo {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 32px;
   min-width: 0;
@@ -2631,7 +2636,9 @@ html[lang="en"] .reconnect-chip .reconnect-label-text {
 }
 
 .baud-rate-combo:focus-within,
-.baud-rate-anchor.open .baud-rate-combo {
+.baud-rate-anchor.open .baud-rate-combo,
+.combo:focus-within,
+.combo-anchor.open .combo {
   border-color: rgba(86, 114, 205, 0.52);
   box-shadow: 0 0 0 4px rgba(86, 114, 205, 0.12);
 }
@@ -2639,7 +2646,9 @@ html[lang="en"] .reconnect-chip .reconnect-label-text {
 /* Explicit height rather than padding arithmetic, so the combo matches the
    32px token like every other control. */
 .baud-rate-combo > input,
-.baud-rate-combo > button {
+.baud-rate-combo > button,
+.combo > input,
+.combo > button {
   width: 100%;
   min-width: 0;
   height: var(--control-h);
@@ -2650,7 +2659,8 @@ html[lang="en"] .reconnect-chip .reconnect-label-text {
   padding: 0 10px;
 }
 
-.baud-rate-combo > input {
+.baud-rate-combo > input,
+.combo > input {
   appearance: textfield;
   -moz-appearance: textfield;
   text-overflow: clip;
@@ -2658,19 +2668,24 @@ html[lang="en"] .reconnect-chip .reconnect-label-text {
 }
 
 .baud-rate-combo > input::-webkit-outer-spin-button,
-.baud-rate-combo > input::-webkit-inner-spin-button {
+.baud-rate-combo > input::-webkit-inner-spin-button,
+.combo > input::-webkit-outer-spin-button,
+.combo > input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
 .baud-rate-combo > input:focus,
-.baud-rate-combo > button:focus {
+.baud-rate-combo > button:focus,
+.combo > input:focus,
+.combo > button:focus {
   border: none;
   box-shadow: none;
   outline: none;
 }
 
-.baud-rate-combo > button {
+.baud-rate-combo > button,
+.combo > button {
   border-left: 1px solid var(--border);
   padding: 0;
   display: grid;
@@ -2679,7 +2694,8 @@ html[lang="en"] .reconnect-chip .reconnect-label-text {
   color: var(--text-soft);
 }
 
-.baud-rate-preset-menu {
+.baud-rate-preset-menu,
+.combo-menu {
   top: calc(100% + 8px);
   left: 0;
   right: auto;
@@ -2689,7 +2705,8 @@ html[lang="en"] .reconnect-chip .reconnect-label-text {
   z-index: 30;
 }
 
-.baud-rate-preset-menu button {
+.baud-rate-preset-menu button,
+.combo-menu button {
   justify-content: center;
   text-align: center;
   min-height: 36px;
