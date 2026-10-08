@@ -7,7 +7,7 @@
  *   bootstrap.js -> vendor/xterm/* -> app.core.js -> app.terminal.js -> app.main.js
  * ==========================================================================*/
 (() => {
-  const VERSION = '0.4.1';
+  const VERSION = '0.4.2';
   const ONLINE_VERSION_URL = 'https://ra9fael.github.io/SerialCanvas/';
   const VERSION_MODAL_SEEN_KEY = 'serialweb:version-modal-seen';
   const MAX_DERIVED_LOG_LINES = 320;

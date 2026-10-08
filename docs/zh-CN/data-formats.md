@@ -27,7 +27,7 @@ SerialCanvas 写出或持久化的一切格式，便于其他工具读取抓取�
 
 ```jsonc
 {
-  "appVersion": "0.4.1",
+  "appVersion": "0.4.2",
   "receiveContentSchemaVersion": 1,
   "savedAt": 1767100000000,          // Date.now()，仅供参考
   "theme": "system",                 // "system" | "light" | "dark"

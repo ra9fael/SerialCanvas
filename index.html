@@ -766,6 +766,7 @@
                 <div id="term-key-bar-body" class="term-key-bar-body">
                   <div class="term-key-bar-row" data-term-row="0"></div>
                   <div class="term-key-bar-row" data-term-row="1"></div>
+                  <div class="term-key-bar-row" data-term-row="2"></div>
                 </div>
               </div>
             </section>
@@ -817,6 +818,13 @@
         <div class="version-changelog">
           <div class="version-changelog-title">更新日志</div>
           <div class="version-release">
+            <strong>v0.4.2 版本 · 26/10/8</strong>
+            <ul>
+              <li>终端快捷键补齐 F1–F12：新增 F5–F12（标准 xterm 序列，与物理键盘行为一致），F1–F4 从 page 组移入独立的 fkeys 组。共 60 键 8 组三行——行输入与导航 / 文本与屏幕 / 流控、中断、 功能键——并以 1440/1100px 下「行不换行」断言守住条高恒定。</li>
+              <li>组合框输入框不再截断数字：一条老的 .term-field input[type="number"] { width: 46px } 规则 优先级更高，把所有输入框钉在 46px，导致 1000000、33554432 在任何窗口宽度下都被截断。 现在每个组合框按自身 max 值的渲染宽度给文本列设底线，▾ 列收窄到 28px，参数行放不下时 工具栏里的原生下拉先收缩。verify-combo 新增几何断言：组合框必须装得下自己的最大值。</li>
+            </ul>
+          </div>
+          <div class="version-release">
             <strong>v0.4.1 版本 · 26/10/8</strong>
             <ul>
               <li>终端快捷键新增 8 个：^S / ^Q（XOFF/XON 流控，单独成组、不用琥珀色）、^\\（SIGQUIT， 中断组补齐）、^H（BS 0x08——字节映射早就有，按钮一直缺）、^M / ^J（裸 CR/LF， 不受换行模式影响）以及 Alt-D / Alt-Backspace（向后/向前删一个词）。共 52 键 7 组， 两行宽度实测偏差 4.6%。</li>
@@ -850,15 +858,6 @@
               <li>字体与主题改动在终端隐藏时（手动视图或监视器收起）也能可靠生效——改动会被挂起，待终端重新可见时应用。</li>
               <li>新增终端字号输入框（8–48 px，默认 12），并支持终端内 Ctrl + 鼠标滚轮缩放。两者都会被持久化。</li>
               <li>清空配置现在同时重置语言与终端字体/字号，并立即重新应用。</li>
-            </ul>
-          </div>
-          <div class="version-release">
-            <strong>v0.1.0 版本 · 26/9/30</strong>
-            <ul>
-              <li>分叉基线：上游 v1.6（提交 e3f9200814）；本仓库把单文件拆成源码分片，并新增了上游没有的 xterm 终端视图。</li>
-              <li>修复串口接收数据特殊情况下监视器多出空行的问题。</li>
-              <li>优化设备连接管理中组件的显示效果。</li>
-              <li>优化图框的部分显示效果和操作逻辑。</li>
             </ul>
           </div>
         </div>

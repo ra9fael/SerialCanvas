@@ -2626,13 +2626,42 @@ html[lang="en"] .reconnect-chip .reconnect-label-text {
 .baud-rate-combo,
 .combo {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 32px;
+  grid-template-columns: minmax(0, 1fr) 28px;
   min-width: 0;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--bg-panel-strong);
   overflow: hidden;
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+/* Per-combo floors for the text column: each is the rendered width of that
+   control's max value plus padding, rounded up with a little margin. Without
+   a floor the toolbar's field sizing starves the column to 46px and clips;
+   without making them per-control, one uniform floor wastes row width on
+   two-digit inputs and re-wraps the params row at 1100px. */
+#mono-size-anchor .combo {
+  grid-template-columns: minmax(34px, 1fr) 28px;
+}
+
+#term-scrollback-anchor .combo {
+  grid-template-columns: minmax(70px, 1fr) 28px;
+}
+
+#live-buffer-size-anchor .combo {
+  grid-template-columns: minmax(75px, 1fr) 28px;
+}
+
+#simulation-interval-anchor .combo {
+  grid-template-columns: minmax(58px, 1fr) 28px;
+}
+
+#simulation-burst-anchor .combo {
+  grid-template-columns: minmax(42px, 1fr) 28px;
+}
+
+#baud-rate-anchor .baud-rate-combo {
+  grid-template-columns: minmax(60px, 1fr) 28px;
 }
 
 .baud-rate-combo:focus-within,
@@ -2656,7 +2685,7 @@ html[lang="en"] .reconnect-chip .reconnect-label-text {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  padding: 0 10px;
+  padding: 0 8px;
 }
 
 .baud-rate-combo > input,
@@ -4218,6 +4247,27 @@ body.theme-dark .chart-axis-binding-option {
 .monitor-toolbar-params {
   justify-content: flex-start;
   gap: 8px;
+}
+
+/* Selects may shrink below their option-text width when the row is tight —
+   a clipped option beats a wrapped row (the row wrapping is what moves the
+   toolbar's height). The combos next to them cannot shrink further: their
+   floors are the width of the digits they must display. min-width:0 goes on
+   the FIELD, not just the select: the field's own min-width:auto would
+   otherwise pass the select's option-text width through as the floor. */
+.monitor-toolbar-params .term-field {
+  min-width: 0;
+}
+
+.monitor-toolbar-params .term-field select {
+  min-width: 0;
+}
+
+/* The custom-select trigger carries the current value as text; a squeezed
+   trigger clips it ("UTF-8" → "UTF…"). Floor the shell: the native selects
+   next to it absorb the rest of the shrink. */
+.monitor-toolbar-params .custom-select {
+  min-width: 60px;
 }
 
 .monitor-toolbar-copy {
@@ -6135,7 +6185,11 @@ body.compact-single.layout-expanded .device-meta-stack {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
+  /* nowrap + shrinkable fields: with min-width:0 on the fields, a tight row
+     compresses the selects instead of pushing a control to a second line —
+     wrapping here is what changes the toolbar's height. The combo floors keep
+     the numeric inputs at the width of their digits. */
+  flex-wrap: nowrap;
   /* Shrink before the monitor title/meta does: Latin labels are wider than the
      Chinese ones, and a squeezed meta stack clips "Mode"/"TX"/"RX" themselves. */
   flex: 0 100 auto;
@@ -6222,6 +6276,26 @@ body.compact-single.layout-expanded .device-meta-stack {
 .term-field input[type="number"]:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+/* The 46px sizing above was written for bare inline number inputs and outranks
+   .combo > input, so it clipped the editable combos (33554432 in 46px) no
+   matter what the combo grid asked for. Combo inputs live inside .term-field
+   too, but they size themselves through the combo grid — reset what that rule
+   would impose. */
+.term-field .combo > input[type="number"] {
+  width: 100%;
+  min-width: 0;
+  padding: 0 10px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  font-weight: 400;
+}
+
+.term-field .combo > input[type="number"]:focus {
+  border: none;
+  box-shadow: none;
 }
 
 

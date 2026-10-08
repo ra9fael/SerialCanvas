@@ -388,6 +388,17 @@
     f2: '\x1bOQ',
     f3: '\x1bOR',
     f4: '\x1bOS',
+    // F5-F12: the standard xterm modifier-less codes. xterm already emits
+    // these for the physical keys; the buttons exist so the bar shows them
+    // and touch/trackpad users can reach them.
+    f5: '\x1b[15~',
+    f6: '\x1b[17~',
+    f7: '\x1b[18~',
+    f8: '\x1b[19~',
+    f9: '\x1b[20~',
+    f10: '\x1b[21~',
+    f11: '\x1b[23~',
+    f12: '\x1b[24~',
     // Editing. backspace sends DEL 0x7f; ^H sends BS 0x08 — some firmware
     // honours only one of the two, so both are bound.
     backspace: '\x7f',
@@ -512,11 +523,7 @@
         { key: 'insert', label: 'Ins', tip: 'Insert 插入模式' },
         { key: 'shift-tab', label: '⇧Tab', tip: 'Shift-Tab 反向补全（越过补全菜单）' },
         { key: 'tab', label: 'Tab', tip: 'Tab 制表符' },
-        { key: 'escape', label: 'Esc', tip: 'Esc ESC' },
-        { key: 'f1', label: 'F1', tip: 'F1（部分固件菜单绑定）' },
-        { key: 'f2', label: 'F2', tip: 'F2' },
-        { key: 'f3', label: 'F3', tip: 'F3' },
-        { key: 'f4', label: 'F4', tip: 'F4' }
+        { key: 'escape', label: 'Esc', tip: 'Esc ESC' }
       ]
     },
     {
@@ -535,27 +542,43 @@
         { key: 'ctrl-g', label: '^G', tip: '^G 中止' },
         { key: 'ctrl-backslash', label: '^\\', tip: '^\\ SIGQUIT（0x1C）' }
       ]
+    },
+    {
+      id: 'fkeys',
+      buttons: [
+        { key: 'f1', label: 'F1', tip: 'F1（部分固件菜单绑定）' },
+        { key: 'f2', label: 'F2', tip: 'F2' },
+        { key: 'f3', label: 'F3', tip: 'F3' },
+        { key: 'f4', label: 'F4', tip: 'F4' },
+        { key: 'f5', label: 'F5', tip: 'F5' },
+        { key: 'f6', label: 'F6', tip: 'F6' },
+        { key: 'f7', label: 'F7', tip: 'F7' },
+        { key: 'f8', label: 'F8', tip: 'F8' },
+        { key: 'f9', label: 'F9', tip: 'F9' },
+        { key: 'f10', label: 'F10', tip: 'F10' },
+        { key: 'f11', label: 'F11', tip: 'F11' },
+        { key: 'f12', label: 'F12', tip: 'F12' }
+      ]
     }
   ];
 
 
   /* Which row of the key bar each group lands on.
 
-     52 keys in one row wrapped wherever the window happened to end, so the bar
-     changed height as the window resized and shoved the terminal around. Two
-     fixed rows keep the bar's height roughly constant — and "roughly" only
-     holds if the two rows carry comparable width, because each row still wraps
-     on its own.
+     60 keys in one row wrapped wherever the window happened to end, so the bar
+     changed height as the window resized and shoved the terminal around. Fixed
+     rows keep the bar's height constant.
 
-     Hence this split rather than the obvious "hot keys on top": the four
-     lightweight groups (submit now carries ^M/^J) plus flow sit on top, the
-     three heavy ones below. Measured in the audit at 52 keys the pair is
-     within a few percent; audit/verify-keybar.mjs asserts the split stays
-     balanced, and the cost is still that Bksp opens row two instead of
-     sitting beside Enter. */
+     Three rows, measured at 60 keys: line input and navigation on top, text
+     and screen manipulation in the middle, and the device-affecting keys last
+     — flow, the amber interrupts, and the function keys the firmware eats.
+     Amber at the very end of the bar is the point: the "read twice before
+     pressing" keys should not sit where an editing reflex lands. audit/
+     verify-keybar.mjs holds the row split and balance. */
   const TERM_KEY_ROWS = [
-    ['submit', 'history', 'move', 'flow'],
-    ['edit', 'page', 'control']
+    ['submit', 'history', 'move'],
+    ['edit', 'page'],
+    ['flow', 'control', 'fkeys']
   ];
 
   /* Buttons must work without the terminal holding focus, so this dispatches
@@ -628,7 +651,10 @@
       // dropping it silently would hide bindings the byte table still has.
       const rowIndex = rowFor.get(group.id);
       const row = Number.isInteger(rowIndex) ? rows[rowIndex] : null;
-      if (!row) return;
+      if (!row) {
+        console.warn(`[keybar] group "${group.id}" has no row ${rowIndex} in the markup — buttons dropped`);
+        return;
+      }
       if (row.childElementCount) {
         const divider = document.createElement('span');
         divider.className = 'term-key-bar-divider';

@@ -28,7 +28,7 @@ falls back to defaults independently, so hand-editing or trimming it is safe.
 
 ```jsonc
 {
-  "appVersion": "0.4.1",
+  "appVersion": "0.4.2",
   "receiveContentSchemaVersion": 1,
   "savedAt": 1767100000000,          // Date.now(), informational only
   "theme": "system",                 // "system" | "light" | "dark"

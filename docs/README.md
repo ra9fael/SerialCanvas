@@ -15,7 +15,7 @@ It combines four jobs that normally need separate tools:
 - **Timeline recorder** — record a session to raw bytes, freeze the live view, scrub and
   replay archived captures, and export/import them as `.bin` / `.csv` / `.txt`.
 
-Current version: **v0.4.1**. This fork's home:
+Current version: **v0.4.2**. This fork's home:
 <https://ra9fael.github.io/SerialCanvas/> ·
 <https://github.com/ra9fael/SerialCanvas>
 

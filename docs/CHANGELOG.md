@@ -7,6 +7,20 @@ they shipped with. `tools/set-version.py` writes every section but those.
 Everything numbered `1.x` is an upstream release by the original author,
 [Conductance-lab](https://conductance-lab.xyz) — see [origin & credits](acknowledgements.md).
 
+## v0.4.2 — 2026/10/8
+
+- The terminal quick-key bar carries **F1–F12**: F5–F12 added (standard xterm codes, matching
+  what the physical keys already emit) and F1–F4 moved out of the page group into a dedicated
+  `fkeys` group. 60 keys in 8 groups across three rows — line input and navigation / text and
+  screen / flow control, interrupts, function keys — with a no-wrap assertion at 1440 and
+  1100px holding the height constant.
+- The combo inputs no longer clip numbers: a legacy `.term-field input[type="number"] { width: 46px }`
+  rule was outranking the combo styles and pinning every input at 46px, so `1000000` and
+  `33554432` truncated at any window width. Each combo now floors its text column at the
+  rendered width of its own max value, the ▾ column slimmed to 28px, and toolbar selects
+  shrink before the params row wraps. A geometry assertion in verify-combo fails if any combo
+  cannot display its own maximum.
+
 ## v0.4.1 — 2026/10/8
 
 - Eight new terminal quick keys: ^S / ^Q (XOFF/XON flow control, in a new non-amber group),
